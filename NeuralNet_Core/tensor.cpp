@@ -163,7 +163,7 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
     else if (_shape.size() == 1 && other->shape().size() == 0)  // 1D + Scalar
     {
         std::vector<float> result;
-        for (std::size_t i = 0; i < shape()[0]; i++)
+        for (std::size_t i = 0; i < _shape[0]; i++)
         {
             result.push_back(operator()(i) + other->item());
         }
@@ -172,10 +172,10 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
     else if (_shape.size() == 2 && other->shape().size() == 0)  // 2D + Scalar
     {
         std::vector<std::vector<float>> result;
-        for (std::size_t i = 0; i < shape()[0]; i++)
+        for (std::size_t i = 0; i < _shape[0]; i++)
         {
             std::vector<float> result_i;
-            for (std::size_t j = 0; j < shape()[1]; j++)
+            for (std::size_t j = 0; j < _shape[1]; j++)
             {
                 result_i.push_back(operator()(i, j) + other->item());
             }
@@ -186,7 +186,7 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
     else if (_shape.size() == 1 && other->shape().size() == 1 && _shape[0] == other->shape()[0])  // 1D + 1D
     {
         std::vector<float> result;
-        for (std::size_t i = 0; i < shape()[0]; i++)
+        for (std::size_t i = 0; i < _shape[0]; i++)
         {
             result.push_back(operator()(i) + other->operator()(i));
         }
@@ -199,10 +199,10 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
             throw std::invalid_argument("Second dimensions are not equal");
         }
         std::vector<std::vector<float>> result;
-        for (std::size_t i = 0; i < shape()[0]; i++)
+        for (std::size_t i = 0; i < _shape[0]; i++)
         {
             std::vector<float> result_i;
-            for (std::size_t j = 0; j < shape()[1]; j++)
+            for (std::size_t j = 0; j < _shape[1]; j++)
             {
                 result_i.push_back(operator()(i, j) + other->operator()(i, j));
             }
@@ -235,7 +235,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
         float result = 0;
         for (std::size_t i = 0; i < _shape[0]; i++)
         {
-            result += operator()(i) + other->operator()(i);
+            result += operator()(i) * other->operator()(i);
         }
         return std::make_shared<Tensor>(result);
     }
@@ -247,7 +247,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
             float result_i = 0;
             for (std::size_t j = 0; j < _shape[1]; j++)
             {
-                result_i += operator()(i, j) + other->operator()(j);
+                result_i += operator()(i, j) * other->operator()(j);
             }
             result.push_back(result_i);
         }
@@ -256,12 +256,12 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
     else if (_shape.size() == 1 && other->shape().size() == 2)  // 1D x 2D -> 1D
     {
         std::vector<float> result;
-        for (std::size_t i = 0; i < other->shape()[0]; i++)
+        for (std::size_t i = 0; i < other->shape()[1]; i++)
         {
             float result_i = 0;
-            for (std::size_t j = 0; j < other->shape()[1]; j++)
+            for (std::size_t j = 0; j < other->shape()[0]; j++)
             {
-                result_i += operator()(j) + other->operator()(j, i);
+                result_i += operator()(j) * other->operator()(j, i);
             }
             result.push_back(result_i);
         }
@@ -278,7 +278,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
                 float result_i_j = 0;
                 for (std::size_t k = 0; k < _shape[1]; k++)
                 {
-                    result_i_j += operator()(i, k) + other->operator()(k, j);
+                    result_i_j += operator()(i, k) * other->operator()(k, j);
                 }
                 result_i.push_back(result_i_j);
             }
