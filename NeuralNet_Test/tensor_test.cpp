@@ -58,6 +58,18 @@ namespace TensorTests {
         EXPECT_EQ((*tensor3)(2), 5.0);
     }
 
+    TEST(Addition, 1D_Scalar)
+    {
+        std::shared_ptr<Tensor> tensor1 =
+            std::make_shared<Tensor>(std::vector<float>({ 1.0, 2.0, 3.0 }));
+        std::shared_ptr<Tensor> tensor2 = std::make_shared<Tensor>(4.0);
+        std::shared_ptr<Tensor> tensor3 = (*tensor1) + tensor2;
+        EXPECT_EQ(tensor3->shape(), std::vector<std::size_t>({ 3 }));
+        EXPECT_EQ((*tensor3)(0), 5.0);
+        EXPECT_EQ((*tensor3)(1), 6.0);
+        EXPECT_EQ((*tensor3)(2), 7.0);
+    }
+
     TEST(Addition, 1D_1D)
     {
         std::shared_ptr<Tensor> tensor1 = std::make_shared<Tensor>(std::vector<float>({ 1.0, 2.0, 3.0 }));
@@ -69,16 +81,34 @@ namespace TensorTests {
         EXPECT_EQ((*tensor3)(2), 9.0);
     }
 
-    TEST(Addition, 1D_Scalar)
+    TEST(Addition, Scalar_2D)
     {
-        std::shared_ptr<Tensor> tensor1 =
-            std::make_shared<Tensor>(std::vector<float>({ 1.0, 2.0, 3.0 }));
-        std::shared_ptr<Tensor> tensor2 = std::make_shared<Tensor>(4.0);
+        std::shared_ptr<Tensor> tensor1 = std::make_shared<Tensor>(1.0);
+        std::shared_ptr<Tensor> tensor2 = std::make_shared<Tensor>(
+            std::vector<std::vector<float>>({ {1.0, 2.0, 3.0}, {4.0, 5.0, 6.0} }));
         std::shared_ptr<Tensor> tensor3 = (*tensor1) + tensor2;
-        EXPECT_EQ(tensor3->shape(), std::vector<std::size_t>({ 3 }));
-        EXPECT_EQ((*tensor3)(0), 5.0);
-        EXPECT_EQ((*tensor3)(1), 6.0);
-        EXPECT_EQ((*tensor3)(2), 7.0);
+        EXPECT_EQ(tensor3->shape(), std::vector<std::size_t>({ 2, 3 }));
+        EXPECT_EQ((*tensor3)(0, 0), 2.0);
+        EXPECT_EQ((*tensor3)(0, 1), 3.0);
+        EXPECT_EQ((*tensor3)(0, 2), 4.0);
+        EXPECT_EQ((*tensor3)(1, 0), 5.0);
+        EXPECT_EQ((*tensor3)(1, 1), 6.0);
+        EXPECT_EQ((*tensor3)(1, 2), 7.0);
+    }
+
+    TEST(Addition, 2D_Scalar)
+    {
+        std::shared_ptr<Tensor> tensor1 = std::make_shared<Tensor>(
+            std::vector<std::vector<float>>({ {1.0, 2.0, 3.0}, {4.0, 5.0, 6.0} }));
+        std::shared_ptr<Tensor> tensor2 = std::make_shared<Tensor>(1.0);
+        std::shared_ptr<Tensor> tensor3 = (*tensor1) + tensor2;
+        EXPECT_EQ(tensor3->shape(), std::vector<std::size_t>({ 2, 3 }));
+        EXPECT_EQ((*tensor3)(0, 0), 2.0);
+        EXPECT_EQ((*tensor3)(0, 1), 3.0);
+        EXPECT_EQ((*tensor3)(0, 2), 4.0);
+        EXPECT_EQ((*tensor3)(1, 0), 5.0);
+        EXPECT_EQ((*tensor3)(1, 1), 6.0);
+        EXPECT_EQ((*tensor3)(1, 2), 7.0);
     }
 
     TEST(Addition, 2D_2D)
