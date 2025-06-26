@@ -1,19 +1,37 @@
 #pragma once
+#include <functional>
 
-class Tensor
+class Tensor : public std::enable_shared_from_this<Tensor>
 {
     private:
         std::vector<float> _data;
         std::vector<std::size_t> _shape;
         std::vector<std::size_t> _stride;
 
+        std::vector<float> _grad;
+        std::function<void(const std::vector<float>&)> _gradfn;
+        std::vector<std::shared_ptr<Tensor>> _parents;
+        bool _requires_grad;
+
     public:
-        Tensor(float data);
-        Tensor(std::vector<float> data);
-        Tensor(std::vector<std::vector<float>> data);
+        Tensor(float data, bool requires_grad = false,
+               std::function<void(const std::vector<float>&)> gradfn = nullptr,
+               std::vector<std::shared_ptr<Tensor>> parents = {});
+        Tensor(std::vector<float> data, bool requires_grad = false,
+               std::function<void(const std::vector<float>&)> gradfn = nullptr,
+               std::vector<std::shared_ptr<Tensor>> parents = {});
+        Tensor(std::vector<std::vector<float>> data, bool requires_grad = false,
+               std::function<void(const std::vector<float>&)> gradfn = nullptr,
+               std::vector<std::shared_ptr<Tensor>> parents = {});
 
         const std::vector<std::size_t> &shape() const;
         const std::vector<std::size_t> &stride() const;
+
+        bool requires_grad() const;
+        const std::vector<float> &grad() const;
+        void zero_grad();
+        void add_to_grad(const std::vector<float> &grad_update);
+        std::size_t count() const;
 
         const float &item() const;
         float &item();

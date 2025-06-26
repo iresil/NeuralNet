@@ -1,12 +1,34 @@
 #include "pch.h"
 #include "tensor.h"
 
-Tensor::Tensor(float data) : _data{ data }, _shape{}, _stride{} {}
+Tensor::Tensor(float data, bool requires_grad,
+               std::function<void(const std::vector<float>&)> gradfn,
+               std::vector<std::shared_ptr<Tensor>> parents) :
+    _data{ data }, _shape{}, _stride{}, _requires_grad{ requires_grad }, _gradfn{ gradfn }, _parents{ parents }
+{
+    if (_requires_grad)
+    {
+        zero_grad();
+    }
+}
 
-Tensor::Tensor(std::vector<float> data) : _data{ data }, _shape{ data.size() }, _stride{ 1 } {}
+Tensor::Tensor(std::vector<float> data, bool requires_grad,
+               std::function<void(const std::vector<float>&)> gradfn,
+               std::vector<std::shared_ptr<Tensor>> parents) :
+    _data{ data }, _shape{ data.size() }, _stride{ 1 },
+    _requires_grad{ requires_grad }, _gradfn{ gradfn }, _parents{ parents }
+{
+    if (_requires_grad)
+    {
+        zero_grad();
+    }
+}
 
-Tensor::Tensor(std::vector<std::vector<float>> data) :
-    _shape{ data.size(), data[0].size() }, _stride{ data[0].size(), 1 }
+Tensor::Tensor(std::vector<std::vector<float>> data, bool requires_grad,
+               std::function<void(const std::vector<float>&)> gradfn,
+               std::vector<std::shared_ptr<Tensor>> parents) :
+    _shape{ data.size(), data[0].size() }, _stride{ data[0].size(), 1 },
+    _requires_grad{ requires_grad }, _gradfn{ gradfn }, _parents{ parents }
 {
     // Validate dimensions
     std::size_t expected_cols = data[0].size();
@@ -26,10 +48,35 @@ Tensor::Tensor(std::vector<std::vector<float>> data) :
             _data.push_back(data[i][j]);
         }
     }
+
+    if (_requires_grad)
+    {
+        zero_grad();
+    }
 }
 
 const std::vector<std::size_t> &Tensor::shape() const { return _shape; }
 const std::vector<std::size_t> &Tensor::stride() const { return _stride; }
+
+bool Tensor::requires_grad() const { return _requires_grad; }
+const std::vector<float> &Tensor::grad() const { return _grad; }
+void Tensor::zero_grad() { _grad = std::vector<float>(_data.size(), 0.0f); }
+void Tensor::add_to_grad(const std::vector<float> &grad_update)
+{
+    if (!_requires_grad)
+    {
+        return;
+    }
+    if (_grad.size() != grad_update.size())
+    {
+        throw std::runtime_error("Gradient shape mismatch during accumulation");
+    }
+    for (std::size_t i = 0; i < _grad.size(); i++)
+    {
+        _grad[i] += grad_update[i];
+    }
+}
+std::size_t Tensor::count() const { return _data.size(); }
 
 const float &Tensor::item() const
 {
@@ -135,6 +182,20 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
     if (_shape.size() == 0 && other->shape().size() == 0)  // Scalar + Scalar
     {
         float result = item() + other->item();
+        if (_requires_grad || other->requires_grad())
+        {
+            std::shared_ptr<Tensor> self = shared_from_this();
+            std::vector<std::shared_ptr<Tensor>> parents { self, other };
+            std::function<void(const std::vector<float>&)> gradfn = [self, other](const std::vector<float> &grad_output)
+            {
+                // Two scalars are added and the result is a scalar (no broadcast during forward pass).
+                // The gradient during backpropagation is also a scalar, which affects both inputs equally.
+                // So we pass the gradient unchanged to both self and other.
+                self->add_to_grad(grad_output);
+                other->add_to_grad(grad_output);
+            };
+            return std::make_shared<Tensor>(result, true, gradfn, parents);
+        }
         return std::make_shared<Tensor>(result);
     }
     else if (_shape.size() == 0 && other->shape().size() == 1)  // Scalar + 1D
@@ -143,6 +204,25 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
         for (std::size_t i = 0; i < other->shape()[0]; i++)
         {
             result.push_back(item() + other->operator()(i));
+        }
+        if (_requires_grad || other->requires_grad())
+        {
+            std::shared_ptr<Tensor> self = shared_from_this();
+            std::vector<std::shared_ptr<Tensor>> parents { self, other };
+            std::function<void(const std::vector<float>&)> gradfn = [self, other](const std::vector<float> &grad_output)
+            {
+                // Because a scalar is added to a vector, the scalar was broadcast during forward pass.
+                // When a scalar is broadcast forward, its gradient must be the sum of all gradients from the broadcasted elements.
+                // The vector receives grad_output directly because it wasn't broadcast.
+                float grad_self = 0;
+                for (std::size_t i = 0; i < grad_output.size(); i++)
+                {
+                    grad_self += grad_output[i];
+                }
+                self->add_to_grad({ grad_self });
+                other->add_to_grad(grad_output);
+            };
+            return std::make_shared<Tensor>(result, true, gradfn, parents);
         }
         return std::make_shared<Tensor>(result);
     }
@@ -158,6 +238,25 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
             }
             result.push_back(result_i);
         }
+        if (_requires_grad || other->requires_grad())
+        {
+            std::shared_ptr<Tensor> self = shared_from_this();
+            std::vector<std::shared_ptr<Tensor>> parents { self, other };
+            std::function<void(const std::vector<float>&)> gradfn = [self, other](const std::vector<float> &grad_output)
+            {
+                // Because a scalar is added to a vector, the scalar was broadcast during forward pass.
+                // When a scalar is broadcast forward, its gradient must be the sum of all gradients from the broadcasted elements.
+                // The vector receives grad_output directly because it wasn't broadcast.
+                float grad_self = 0;
+                for (std::size_t i = 0; i < grad_output.size(); i++)
+                {
+                    grad_self += grad_output[i];
+                }
+                self->add_to_grad({ grad_self });
+                other->add_to_grad(grad_output);
+            };
+            return std::make_shared<Tensor>(result, true, gradfn, parents);
+        }
         return std::make_shared<Tensor>(result);
     }
     else if (_shape.size() == 1 && other->shape().size() == 0)  // 1D + Scalar
@@ -166,6 +265,25 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
         for (std::size_t i = 0; i < _shape[0]; i++)
         {
             result.push_back(operator()(i) + other->item());
+        }
+        if (_requires_grad || other->requires_grad())
+        {
+            std::shared_ptr<Tensor> self = shared_from_this();
+            std::vector<std::shared_ptr<Tensor>> parents { self, other };
+            std::function<void(const std::vector<float>&)> gradfn = [self, other](const std::vector<float> &grad_output)
+            {
+                // Because a scalar is added to a vector, the scalar was broadcast during forward pass.
+                // When a scalar is broadcast forward, its gradient must be the sum of all gradients from the broadcasted elements.
+                // The vector receives grad_output directly because it wasn't broadcast.
+                float grad_other = 0;
+                for (std::size_t i = 0; i < grad_output.size(); i++)
+                {
+                    grad_other += grad_output[i];
+                }
+                self->add_to_grad(grad_output);
+                other->add_to_grad({ grad_other });
+            };
+            return std::make_shared<Tensor>(result, true, gradfn, parents);
         }
         return std::make_shared<Tensor>(result);
     }
@@ -181,6 +299,25 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
             }
             result.push_back(result_i);
         }
+        if (_requires_grad || other->requires_grad())
+        {
+            std::shared_ptr<Tensor> self = shared_from_this();
+            std::vector<std::shared_ptr<Tensor>> parents { self, other };
+            std::function<void(const std::vector<float>&)> gradfn = [self, other](const std::vector<float> &grad_output)
+            {
+                // Because a scalar is added to a vector, the scalar was broadcast during forward pass.
+                // When a scalar is broadcast forward, its gradient must be the sum of all gradients from the broadcasted elements.
+                // The vector receives grad_output directly because it wasn't broadcast.
+                float grad_other = 0;
+                for (std::size_t i = 0; i < grad_output.size(); i++)
+                {
+                    grad_other += grad_output[i];
+                }
+                self->add_to_grad(grad_output);
+                other->add_to_grad({ grad_other });
+            };
+            return std::make_shared<Tensor>(result, true, gradfn, parents);
+        }
         return std::make_shared<Tensor>(result);
     }
     else if (_shape.size() == 1 && other->shape().size() == 1 && _shape[0] == other->shape()[0])  // 1D + 1D
@@ -189,6 +326,19 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
         for (std::size_t i = 0; i < _shape[0]; i++)
         {
             result.push_back(operator()(i) + other->operator()(i));
+        }
+        if (_requires_grad || other->requires_grad())
+        {
+            std::shared_ptr<Tensor> self = shared_from_this();
+            std::vector<std::shared_ptr<Tensor>> parents { self, other };
+            std::function<void(const std::vector<float>&)> gradfn = [self, other](const std::vector<float> &grad_output)
+            {
+                // Two vectors are added and the result is a vector (no broadcast during forward pass).
+                // So during backpropagation we pass the gradient unchanged to both self and other.
+                self->add_to_grad(grad_output);
+                other->add_to_grad(grad_output);
+            };
+            return std::make_shared<Tensor>(result, true, gradfn, parents);
         }
         return std::make_shared<Tensor>(result);
     }
@@ -207,6 +357,19 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
                 result_i.push_back(operator()(i, j) + other->operator()(i, j));
             }
             result.push_back(result_i);
+        }
+        if (_requires_grad || other->requires_grad())
+        {
+            std::shared_ptr<Tensor> self = shared_from_this();
+            std::vector<std::shared_ptr<Tensor>> parents{ self, other };
+            std::function<void(const std::vector<float>&)> gradfn = [self, other](const std::vector<float> &grad_output)
+                {
+                    // Two vectors are added and the result is a vector (no broadcast during forward pass).
+                    // So during backpropagation we pass the gradient unchanged to both self and other.
+                    self->add_to_grad(grad_output);
+                    other->add_to_grad(grad_output);
+                };
+            return std::make_shared<Tensor>(result, true, gradfn, parents);
         }
         return std::make_shared<Tensor>(result);
     }
