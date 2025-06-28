@@ -443,7 +443,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
                 {
                     for (std::size_t j = 0; j < self->shape()[1]; j++)
                     {
-                        grad_self.push_back(self->operator()(j) * grad_output[i]);
+                        grad_self.push_back(other->operator()(j) * grad_output[i]);
                     }
                 }
                 std::vector<float> grad_other;
@@ -496,7 +496,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
                 {
                     for (std::size_t j = 0; j < other->shape()[1]; j++)
                     {
-                        grad_other.push_back(self->operator()(i) * grad_output[i]);
+                        grad_other.push_back(self->operator()(i) * grad_output[j]);
                     }
                 }
                 self->add_to_grad(grad_self);
@@ -552,6 +552,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
                         {
                             grad_other_i_j += self->operator()(k, i) * grad_output[k * other->shape()[1] + j];
                         }
+                        grad_other.push_back(grad_other_i_j);
                     }
                 }
                 self->add_to_grad(grad_self);
