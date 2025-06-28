@@ -404,7 +404,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
         {
             std::shared_ptr<Tensor> self = shared_from_this();
             std::vector<std::shared_ptr<Tensor>> parents{ self, other };
-            std::function<void (const std::vector<float>&)> gradfn = [self, other](const std::vector<float> &grad_output)
+            std::function<void(const std::vector<float>&)> gradfn = [self, other](const std::vector<float> &grad_output)
             {
                 std::vector<float> grad_self;
                 std::vector<float> grad_other;
@@ -479,7 +479,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
         {
             std::shared_ptr<Tensor> self = shared_from_this();
             std::vector<std::shared_ptr<Tensor>> parents{ self, other };
-            std::function<void const(std::vector<float>&)> gradfn = [self, other](const std::vector<float> &grad_output)
+            std::function<void(const std::vector<float>&)> gradfn = [self, other](const std::vector<float> &grad_output)
             {
                 std::vector<float> grad_self;
                 for (std::size_t i = 0; i < self->shape()[0]; i++)
@@ -527,7 +527,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
         {
             std::shared_ptr<Tensor> self = shared_from_this();
             std::vector<std::shared_ptr<Tensor>> parents{ self, other };
-            std::function<void const (std::vector<float>&)> gradfn = [self, other](const std::vector<float> &grad_output)
+            std::function<void(const std::vector<float>&)> gradfn = [self, other](const std::vector<float> &grad_output)
             {
                 std::vector<float> grad_self;
                 for (std::size_t i = 0; i < self->shape()[0]; i++)
