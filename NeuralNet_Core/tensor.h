@@ -13,6 +13,10 @@ class Tensor : public std::enable_shared_from_this<Tensor>
         std::vector<std::shared_ptr<Tensor>> _parents;
         bool _requires_grad;
 
+        void _backward();
+        bool _visited = false;
+        void _reset_graph_visit();
+
     public:
         Tensor(float data, bool requires_grad = false,
                std::function<void(const std::vector<float>&)> gradfn = nullptr,
@@ -32,6 +36,8 @@ class Tensor : public std::enable_shared_from_this<Tensor>
         void zero_grad();
         void add_to_grad(const std::vector<float> &grad_update);
         std::size_t count() const;
+
+        void backward();
 
         const float &item() const;
         float &item();

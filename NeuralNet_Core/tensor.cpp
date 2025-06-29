@@ -78,6 +78,55 @@ void Tensor::add_to_grad(const std::vector<float> &grad_update)
 }
 std::size_t Tensor::count() const { return _data.size(); }
 
+void Tensor::_reset_graph_visit()
+{
+    if (!_visited)
+    {
+        return;
+    }
+    _visited = false;
+    for (std::size_t i = 0; i < _parents.size(); i++)
+    {
+        _parents[i]->_reset_graph_visit();
+    }
+}
+
+void Tensor::_backward()
+{
+    if (!_requires_grad)
+    {
+        return;
+    }
+    if (_visited)
+    {
+        return;
+    }
+    _visited = true;
+    if (_gradfn)
+    {
+        _gradfn(_grad);
+    }
+    for (std::size_t i = 0; i < _parents.size(); i++)
+    {
+        _parents[i]->_backward();
+    }
+}
+
+void Tensor::backward()
+{
+    if (!_requires_grad)
+    {
+        throw std::runtime_error("Element does not require grad");
+    }
+    if (_shape.size() != 0)
+    {
+        throw std::runtime_error("Gradient can only be calculated for scalar outputs");
+    }
+    _reset_graph_visit();
+    _grad = { 1 };
+    _backward();
+}
+
 const float &Tensor::item() const
 {
     // Works only with scalars and 1d tensors
@@ -393,7 +442,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
         throw std::invalid_argument("Last dimension of the first tensor doesn't have the same size as the first dimension of the second");
     }
 
-    if (_shape.size() == 1 && other->shape().size() == 1)  // 1D x 1D -> float
+    if (_shape.size() == 1 && other->shape().size() == 1)  // Dot Product: 1D x 1D -> float
     {
         float result = 0;
         for (std::size_t i = 0; i < _shape[0]; i++)
@@ -420,7 +469,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
         }
         return std::make_shared<Tensor>(result);
     }
-    else if (_shape.size() == 2 && other->shape().size() == 1)  // 2D x 1D -> 1D
+    else if (_shape.size() == 2 && other->shape().size() == 1)  // Matrix-Vector Product: 2D x 1D -> 1D
     {
         std::vector<float> result;
         for (std::size_t i = 0; i < _shape[0]; i++)
@@ -463,7 +512,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
         }
         return std::make_shared<Tensor>(result);
     }
-    else if (_shape.size() == 1 && other->shape().size() == 2)  // 1D x 2D -> 1D
+    else if (_shape.size() == 1 && other->shape().size() == 2)  // Vector-Matrix Product: 1D x 2D -> 1D
     {
         std::vector<float> result;
         for (std::size_t i = 0; i < other->shape()[1]; i++)
@@ -506,7 +555,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
         }
         return std::make_shared<Tensor>(result);
     }
-    else if (_shape.size() == 2 && other->shape().size() == 2) // 2D x 2D
+    else if (_shape.size() == 2 && other->shape().size() == 2) // Matrix-Matrix Product: 2D x 2D -> 2D
     {
         std::vector<std::vector<float>> result;
         for (std::size_t i = 0; i < _shape[0]; i++)
