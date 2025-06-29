@@ -78,6 +78,8 @@ void Tensor::add_to_grad(const std::vector<float> &grad_update)
 }
 std::size_t Tensor::count() const { return _data.size(); }
 
+std::vector<float> &Tensor::data() { return _data; }
+
 void Tensor::_reset_graph_visit()
 {
     if (!_visited)
