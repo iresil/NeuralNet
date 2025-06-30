@@ -11,7 +11,10 @@
 
 // add headers that you want to pre-compile here
 #include <functional>
+#include <memory>
+#include <unordered_map>
 #include <vector>
+#include <utility>
 #include <stdexcept>
 #include <iostream>
 #include <string>
