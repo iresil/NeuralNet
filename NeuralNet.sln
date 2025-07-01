@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NeuralNet_Core", "NeuralNet
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NeuralNet_Test", "NeuralNet_Test\NeuralNet_Test.vcxproj", "{C83DDEDF-6E18-4E0A-BE7F-2CBCB539963B}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NeuralNet_Layers", "NeuralNet_Layers\NeuralNet_Layers.vcxproj", "{D7ECDEFD-EFED-4134-9353-0D9738757F9B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -41,6 +43,14 @@ Global
 		{C83DDEDF-6E18-4E0A-BE7F-2CBCB539963B}.Release|x64.Build.0 = Release|x64
 		{C83DDEDF-6E18-4E0A-BE7F-2CBCB539963B}.Release|x86.ActiveCfg = Release|Win32
 		{C83DDEDF-6E18-4E0A-BE7F-2CBCB539963B}.Release|x86.Build.0 = Release|Win32
+		{D7ECDEFD-EFED-4134-9353-0D9738757F9B}.Debug|x64.ActiveCfg = Debug|x64
+		{D7ECDEFD-EFED-4134-9353-0D9738757F9B}.Debug|x64.Build.0 = Debug|x64
+		{D7ECDEFD-EFED-4134-9353-0D9738757F9B}.Debug|x86.ActiveCfg = Debug|Win32
+		{D7ECDEFD-EFED-4134-9353-0D9738757F9B}.Debug|x86.Build.0 = Debug|Win32
+		{D7ECDEFD-EFED-4134-9353-0D9738757F9B}.Release|x64.ActiveCfg = Release|x64
+		{D7ECDEFD-EFED-4134-9353-0D9738757F9B}.Release|x64.Build.0 = Release|x64
+		{D7ECDEFD-EFED-4134-9353-0D9738757F9B}.Release|x86.ActiveCfg = Release|Win32
+		{D7ECDEFD-EFED-4134-9353-0D9738757F9B}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
