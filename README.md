@@ -22,6 +22,9 @@
 | 2D &#183; 1D | 1D | 1D | 1D (Sum over rows) | Matrix-vector product |
 | 2D &#183; 2D | 2D | Neither | No summing needed | Matrix-matrix product |
 
+### Flatten Layer
+Reshapes inputs, usually from multi-dimensional into flat vectors, applied before fully connected layers.
+
 ### Linear Layer
 Performs a *learnable affine transformation* on its input:
 ```math
