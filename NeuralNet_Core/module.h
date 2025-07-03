@@ -1,5 +1,6 @@
 #pragma once
 #include "tensor.h"
+#include <unordered_map>
 
 class Module
 {
