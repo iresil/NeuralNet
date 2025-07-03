@@ -21,3 +21,13 @@
 | 1D &#183; 2D | 1D | 1D | 1D (Sum over rows) | Vector-matrix product |
 | 2D &#183; 1D | 1D | 1D | 1D (Sum over rows) | Matrix-vector product |
 | 2D &#183; 2D | 2D | Neither | No summing needed | Matrix-matrix product |
+
+### Linear Layer
+Performs a *learnable affine transformation* on its input:
+```math
+y = W \cdot x + b
+```
+- $`x`$: Input tensor of shape `[batch_size, input_dim]`
+- $`y`$: Output tensor of shape `[batch_size, output_dim]`
+- $`W`$: Weight of shape `[output_dim, input_dim]`
+- $`b`$: Bias vector of shape `[output_dim]`
