@@ -10,6 +10,25 @@ std::shared_ptr<Tensor> Relu::forward(std::shared_ptr<Tensor> input)
         {
             result = input->item();
         }
+        if (input->requires_grad())
+        {
+            std::vector<std::shared_ptr<Tensor>> parents{ input };
+            
+            std::function<void(const std::vector<float>&)> gradfn = [input](const std::vector<float> &grad_output)
+            {
+                std::vector<float> grad_input;
+                if (input->item() > 0)
+                {
+                    grad_input.push_back(grad_output[0]);
+                }
+                else
+                {
+                    grad_input.push_back(0.0f);
+                }
+                input->add_to_grad(grad_input);
+            };
+            return std::make_shared<Tensor>(result, true, gradfn, parents);
+        }
         return std::make_shared<Tensor>(result);
     }
     else if (input->shape().size() == 1)
@@ -25,6 +44,28 @@ std::shared_ptr<Tensor> Relu::forward(std::shared_ptr<Tensor> input)
             {
                 result.push_back(0.0f);
             }
+        }
+        if (input->requires_grad())
+        {
+            std::vector<std::shared_ptr<Tensor>> parents{ input };
+
+            std::function<void(const std::vector<float>&)> gradfn = [input](const std::vector<float> &grad_output)
+            {
+                std::vector<float> grad_input;
+                for (std::size_t i = 0; i < input->count(); i++)
+                {
+                    if ((*input)(i) > 0)
+                    {
+                        grad_input.push_back(grad_output[i]);
+                    }
+                    else
+                    {
+                        grad_input.push_back(0.0f);
+                    }
+                }
+                input->add_to_grad(grad_input);
+            };
+            return std::make_shared<Tensor>(result, true, gradfn, parents);
         }
         return std::make_shared<Tensor>(result);
     }
@@ -46,6 +87,29 @@ std::shared_ptr<Tensor> Relu::forward(std::shared_ptr<Tensor> input)
                 }
             }
             result.push_back(result_i);
+        }
+        if (input->requires_grad())
+        {
+            std::vector<std::shared_ptr<Tensor>> parents{ input };
+
+            std::function<void(const std::vector<float>&)> gradfn = [input](const std::vector<float> &grad_output)
+            {
+                // All gradients are stored in row-major order
+                std::vector<float> grad_input;
+                for (std::size_t i = 0; i < input->count(); i++)
+                {
+                    if ((*input)(i) > 0)
+                    {
+                        grad_input.push_back(grad_output[i]);
+                    }
+                    else
+                    {
+                        grad_input.push_back(0.0f);
+                    }
+                }
+                input->add_to_grad(grad_input);
+            };
+            return std::make_shared<Tensor>(result, true, gradfn, parents);
         }
         return std::make_shared<Tensor>(result);
     }
