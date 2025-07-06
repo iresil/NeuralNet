@@ -1,5 +1,6 @@
 #pragma once
-#include "../NeuralNet_Core/tensor.h"
+class Tensor;
+#include <memory>
 #include "../NeuralNet_Core/module.h"
 
 class Flatten : public Module

@@ -1,6 +1,8 @@
 #pragma once
+class Tensor;
+#include <memory>
+#include <cstddef>
 #include "../NeuralNet_Core/module.h"
-#include "../NeuralNet_Core/tensor.h"
 
 class Linear : public Module
 {

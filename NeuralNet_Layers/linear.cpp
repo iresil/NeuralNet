@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "linear.h"
 #include <random>
+#include "../NeuralNet_Core/tensor.h"
 
 Linear::Linear(std::size_t in_features, std::size_t out_features, std::size_t seed) :
     _in_features(in_features), _out_features(out_features),

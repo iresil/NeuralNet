@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "tensor.h"
 #include "module.h"
 
 std::shared_ptr<Tensor> Module::forward(std::shared_ptr<Tensor> input)

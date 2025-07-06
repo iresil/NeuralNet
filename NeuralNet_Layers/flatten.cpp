@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "flatten.h"
+#include "../NeuralNet_Core/tensor.h"
 
 std::shared_ptr<Tensor> Flatten::forward(std::shared_ptr<Tensor> input)
 {

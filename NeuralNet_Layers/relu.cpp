@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "relu.h"
+#include "../NeuralNet_Core/tensor.h"
 
 std::shared_ptr<Tensor> Relu::forward(std::shared_ptr<Tensor> input)
 {

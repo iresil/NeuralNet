@@ -1,5 +1,8 @@
 #pragma once
-#include "tensor.h"
+class Tensor;
+#include <memory>
+#include <string>
+#include <unordered_map>
 
 class Serializer
 {

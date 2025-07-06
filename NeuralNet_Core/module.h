@@ -1,6 +1,10 @@
 #pragma once
-#include "tensor.h"
+class Tensor;
+#include <memory>
+#include <string>
 #include <unordered_map>
+#include <vector>
+#include <utility>
 
 class Module
 {

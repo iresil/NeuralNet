@@ -12,13 +12,10 @@
 // add headers that you want to pre-compile here
 #include <functional>
 #include <memory>
+#include <cstddef>
+#include <string>
 #include <unordered_map>
 #include <vector>
-#include <utility>
 #include <stdexcept>
-#include <filesystem>
-#include <fstream>
-#include <iostream>
-#include <string>
 
 #endif //PCH_H

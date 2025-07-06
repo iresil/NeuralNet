@@ -12,8 +12,8 @@
 // add headers that you want to pre-compile here
 #include <functional>
 #include <memory>
+#include <string>
 #include <unordered_map>
 #include <vector>
-#include <string>
 
 #endif //PCH_H

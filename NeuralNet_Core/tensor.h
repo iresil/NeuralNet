@@ -1,5 +1,9 @@
 #pragma once
 #include <functional>
+#include <iostream>
+#include <memory>
+#include <cstddef>
+#include <vector>
 
 class Tensor : public std::enable_shared_from_this<Tensor>
 {
