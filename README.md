@@ -50,3 +50,23 @@ xychart-beta
 ```math
 ReLU(x) = (x)^{+} = max(0,x)
 ```
+
+## Serialization
+### Stored Byte Sizes
+```mermaid
+packet-beta
+  0-3: "Magic Number (int)"
+  4-11: "[Weight Name 1] Size (size_t x64)"
+  12-31: "[Weight Name 1] Value (Variable Length String = Weight Name 1 Size)"
+  32-39: "[Dimensions 1] Count"
+  40-55: "[Dimensions 1] Size (Variable Length Array = Dimensions 1 Count * size_t Size)"
+  56-63: "[Elements 1] Count"
+  64-95: "[Elements 1] Raw Data (Variable Length Array = Elements 1 Count * float Size)"
+  96-103: "[Weight Name 2] Size (size_t x64)"
+  104-127: "[Weight Name 2] Value (Variable Length String = Weight Name 2 Size)"
+  128-135: "[Dimensions 2] Count"
+  136-151: "[Dimensions 2] Size (Variable Length Array = Dimensions 2 Count * size_t Size)"
+  152-159: "[Elements 2] Count"
+  160-191: "[Elements 2] Raw Data (Variable Length Array = Elements 2 Count * float Size)"
+  192-223: "..."
+```
