@@ -40,3 +40,13 @@ y = W \cdot x + b
 - $`y`$: Output tensor of shape `[batch_size, output_dim]`
 - $`W`$: Weight of shape `[output_dim, input_dim]`
 - $`b`$: Bias vector of shape `[output_dim]`
+
+### Rectified Linear Unit Layer (ReLU)
+Applies the rectified linear unit function element-wise, essentially removing all negative values from the input tensor.
+```mermaid
+xychart-beta
+    line [0, 0, 0, 2, 4]
+```
+```math
+ReLU(x) = (x)^{+} = max(0,x)
+```
