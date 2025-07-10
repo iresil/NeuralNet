@@ -84,6 +84,7 @@
     <ClInclude Include="linear.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="relu.h" />
+    <ClInclude Include="softmax.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="flatten.cpp" />
@@ -93,6 +94,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="relu.cpp" />
+    <ClCompile Include="softmax.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NeuralNet_Core\NeuralNet_Core.vcxproj">
