@@ -18,6 +18,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NeuralNet_Layers", "NeuralN
 		{1E73124F-88EA-4125-9408-E5168FCAFEE1} = {1E73124F-88EA-4125-9408-E5168FCAFEE1}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NeuralNet_Training", "NeuralNet_Training\NeuralNet_Training.vcxproj", "{B076CF30-511A-4CB9-B73B-90ACF26B1875}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -40,6 +42,10 @@ Global
 		{D7ECDEFD-EFED-4134-9353-0D9738757F9B}.Debug|x64.Build.0 = Debug|x64
 		{D7ECDEFD-EFED-4134-9353-0D9738757F9B}.Release|x64.ActiveCfg = Release|x64
 		{D7ECDEFD-EFED-4134-9353-0D9738757F9B}.Release|x64.Build.0 = Release|x64
+		{B076CF30-511A-4CB9-B73B-90ACF26B1875}.Debug|x64.ActiveCfg = Debug|x64
+		{B076CF30-511A-4CB9-B73B-90ACF26B1875}.Debug|x64.Build.0 = Debug|x64
+		{B076CF30-511A-4CB9-B73B-90ACF26B1875}.Release|x64.ActiveCfg = Release|x64
+		{B076CF30-511A-4CB9-B73B-90ACF26B1875}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
