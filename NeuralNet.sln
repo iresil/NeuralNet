@@ -6,6 +6,7 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NeuralNet_Console", "NeuralNet_Console\NeuralNet_Console.vcxproj", "{AAAE8B80-5C07-4E81-9728-A24BF3D07A05}"
 	ProjectSection(ProjectDependencies) = postProject
 		{1E73124F-88EA-4125-9408-E5168FCAFEE1} = {1E73124F-88EA-4125-9408-E5168FCAFEE1}
+		{B076CF30-511A-4CB9-B73B-90ACF26B1875} = {B076CF30-511A-4CB9-B73B-90ACF26B1875}
 		{D7ECDEFD-EFED-4134-9353-0D9738757F9B} = {D7ECDEFD-EFED-4134-9353-0D9738757F9B}
 	EndProjectSection
 EndProject
@@ -19,6 +20,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NeuralNet_Layers", "NeuralN
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NeuralNet_Training", "NeuralNet_Training\NeuralNet_Training.vcxproj", "{B076CF30-511A-4CB9-B73B-90ACF26B1875}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NeuralNet_Data", "NeuralNet_Data\NeuralNet_Data.vcxproj", "{D94E9831-E0D9-4883-B90E-F67C26D5CF9F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1E73124F-88EA-4125-9408-E5168FCAFEE1} = {1E73124F-88EA-4125-9408-E5168FCAFEE1}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -46,6 +52,10 @@ Global
 		{B076CF30-511A-4CB9-B73B-90ACF26B1875}.Debug|x64.Build.0 = Debug|x64
 		{B076CF30-511A-4CB9-B73B-90ACF26B1875}.Release|x64.ActiveCfg = Release|x64
 		{B076CF30-511A-4CB9-B73B-90ACF26B1875}.Release|x64.Build.0 = Release|x64
+		{D94E9831-E0D9-4883-B90E-F67C26D5CF9F}.Debug|x64.ActiveCfg = Debug|x64
+		{D94E9831-E0D9-4883-B90E-F67C26D5CF9F}.Debug|x64.Build.0 = Debug|x64
+		{D94E9831-E0D9-4883-B90E-F67C26D5CF9F}.Release|x64.ActiveCfg = Release|x64
+		{D94E9831-E0D9-4883-B90E-F67C26D5CF9F}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
