@@ -80,11 +80,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="dataset.h" />
+    <ClInclude Include="dataset_fashionmnist.h" />
     <ClInclude Include="dataset_mnist.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dataset.cpp" />
+    <ClCompile Include="dataset_fashionmnist.cpp" />
     <ClCompile Include="dataset_mnist.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

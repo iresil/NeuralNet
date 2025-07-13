@@ -24,6 +24,9 @@
     <ClInclude Include="dataset_mnist.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="dataset_fashionmnist.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -33,6 +36,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="dataset_mnist.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dataset_fashionmnist.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
