@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
+#include "../NeuralNet_Core/tensor.h"
 
 std::vector<int> Dataset::read_mnist_labels(std::string path)
 {
@@ -70,6 +71,19 @@ std::vector<std::vector<std::vector<float>>> Dataset::read_mnist(std::string pat
         }
     }
     return dataset;
+}
+
+void Dataset::visualize_image(std::shared_ptr<Tensor> image)
+{
+    for (int i = 0; i < image->shape()[0]; ++i)
+    {
+        for (int j = 0; j < image->shape()[1]; ++j)
+        {
+            float px = (*image)(i, j);
+            std::cout << (px > 0.75f ? '@' : (px > 0.5f ? '#' : (px > 0.25f ? '+' : (px > 0.1f ? '.' : ' '))));
+        }
+        std::cout << std::endl;
+    }
 }
 
 int Dataset::reverse_int(int i)
