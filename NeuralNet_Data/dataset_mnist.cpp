@@ -20,5 +20,5 @@ int MNIST::get_length()
 
 std::string MNIST::label_to_class(int label)
 {
-    return classes[label];
+    return _classes[label];
 }

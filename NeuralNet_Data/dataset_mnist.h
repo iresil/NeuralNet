@@ -11,8 +11,8 @@ class MNIST : public Dataset
     private:
         std::vector<std::vector<std::vector<float>>> _images;
         std::vector<int> _labels;
-        std::vector<std::string> classes = { "zero", "one", "two", "three", "four",
-                                             "five", "six", "seven", "eight", "nine" };
+        std::vector<std::string> _classes = { "zero", "one", "two", "three", "four",
+                                              "five", "six", "seven", "eight", "nine" };
 
     public:
         MNIST(std::string data_path, std::string labels_path);
