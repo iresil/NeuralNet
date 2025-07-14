@@ -30,7 +30,7 @@ std::vector<std::pair<int, std::shared_ptr<Tensor>>> DataLoader::Iterator::opera
     std::vector<std::pair<int, std::shared_ptr<Tensor>>> batch;
     for (int i = 0; i < _dataloader->_batch_size; i++)
     {
-        batch.push_back(_dataloader->_dataset->get_item(_dataloader->_indices[_index + 1]));
+        batch.push_back(_dataloader->_dataset->get_item(_dataloader->_indices[_index + i]));
     }
     return batch;
 }
