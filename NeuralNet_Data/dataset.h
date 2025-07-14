@@ -16,5 +16,5 @@ class Dataset
         virtual int get_length() = 0;
         std::vector<int> read_mnist_labels(std::string path);
         std::vector<std::vector<std::vector<float>>> read_mnist(std::string path);
-        void visualize_image(std::shared_ptr<Tensor> image);
+        static void visualize_image(std::shared_ptr<Tensor> image);
 };
