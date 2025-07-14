@@ -33,7 +33,7 @@ std::vector<int> Dataset::read_mnist_labels(std::string path)
 
 std::vector<std::vector<std::vector<float>>> Dataset::read_mnist(std::string path)
 {
-    std::ifstream file(path);
+    std::ifstream file(path, std::ios::binary);
     std::vector<std::vector<std::vector<float>>> dataset;
     if (file.is_open())
     {
