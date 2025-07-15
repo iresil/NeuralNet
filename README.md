@@ -91,3 +91,14 @@ packet-beta
   160-191: "[Elements 2] Raw Data (Variable Length Array = Elements 2 Count * float Size)"
   192-223: "..."
 ```
+
+## Training
+### MNIST Dataset Structure
+```mermaid
+packet-beta
+  0-3: "Magic Number"
+  4-7: "Image Count"
+  8-11: "Row Count"
+  12-15: "Column Count"
+  16-95: "Pixels (Variable Length - one unsigned byte per pixel)"
+```
