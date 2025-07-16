@@ -41,6 +41,7 @@ class Tensor : public std::enable_shared_from_this<Tensor>
         void add_to_grad(const std::vector<float> &grad_update);
         std::size_t count() const;
         std::vector<float> &data();
+        std::size_t argmax() const;
 
         void backward();
 

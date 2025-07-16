@@ -80,6 +80,11 @@ std::size_t Tensor::count() const { return _data.size(); }
 
 std::vector<float> &Tensor::data() { return _data; }
 
+std::size_t Tensor::argmax() const
+{
+    return std::distance(_data.begin(), std::max_element(_data.begin(), _data.end()));
+}
+
 void Tensor::_reset_graph_visit()
 {
     if (!_visited)

@@ -88,6 +88,9 @@
     <ProjectReference Include="..\NeuralNet_Layers\NeuralNet_Layers.vcxproj">
       <Project>{d7ecdefd-efed-4134-9353-0d9738757f9b}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\NeuralNet_Training\NeuralNet_Training.vcxproj">
+      <Project>{b076cf30-511a-4cb9-b73b-90acf26b1875}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
