@@ -4,9 +4,84 @@
 #include <windows.h>
 #include <filesystem>
 #include <iostream>
+#include <iomanip>
 #include <string>
+#include <numeric>
+#include <random>
+#include "NeuralNetwork.cpp"
 #include "../NeuralNet_Data/dataset_mnist.h"
 #include "../NeuralNet_Data/dataloader.h"
+#include "../NeuralNet_Core/tensor.h"
+#include "../NeuralNet_Training/loss_crossentropy.h"
+#include "../NeuralNet_Training/optimizer_sgd.h"
+#include "../NeuralNet_Core/serializer.h"
+
+void train(DataLoader& dataloader, NeuralNetwork& model, CrossEntropy& loss_fn, SGD& optimizer)
+{
+    std::size_t log_interval = 100;
+    std::size_t batch_n = 0;
+    std::size_t seen_samples = 0;
+
+    for (const auto &batch : dataloader)
+    {
+        std::shared_ptr<Tensor> total_loss = nullptr;
+        std::size_t batch_size = batch.size();
+
+        for (const auto &[label, tensor] : batch)
+        {
+            auto output = model(tensor);
+            auto loss = loss_fn(output, label);
+            if (total_loss == nullptr)
+            {
+                total_loss = loss;
+            }
+            else
+            {
+                total_loss = (*total_loss) + loss;
+            }
+            seen_samples++;
+        }
+        total_loss->item() /= batch_size;
+
+        if (batch_n % log_interval == 0)
+        {
+            std::cout << "Loss: " << std::fixed << std::setprecision(6) << total_loss->item() << "  [" << seen_samples
+                      << "/" << dataloader.n_samples() << "]" << std::endl;
+        }
+
+        total_loss->backward();
+        optimizer.step();
+        optimizer.zero_grad();
+        batch_n++;
+    }
+}
+
+void test(DataLoader& dataloader, NeuralNetwork& model, CrossEntropy& loss_fn)
+{
+    float running_loss = 0.0f;
+    std::size_t correct = 0;
+    std::size_t n_samples = 0;
+
+    for (const auto &batch : dataloader)
+    {
+        for (const auto &[label, tensor] : batch)
+        {
+            auto output = model(tensor);
+            if (output->argmax() == label)
+            {
+                correct++;
+            }
+            running_loss += loss_fn(output, label)->item();
+            n_samples++;
+        }
+    }
+
+    float accuracy = static_cast<float>(correct) / static_cast<float>(n_samples);
+    float avg_loss = running_loss / n_samples;
+
+    std::cout << std::fixed << "Test error:\n  accuracy: " << std::setprecision(1) << accuracy * 100.0f
+              << "%\n  avg loss" << std::setprecision(6) << avg_loss << std::endl;
+}
 
 std::string get_model_path(std::string filename = "mnist.nn") {
     char path[MAX_PATH];
@@ -21,26 +96,43 @@ std::string get_model_path(std::string filename = "mnist.nn") {
     return folderPath.string();
 }
 
-int main()
+void train_new_mnist_model()
 {
-    std::string data_path = get_model_path("train-images-idx3-ubyte");
-    std::string labels_path = get_model_path("train-labels-idx1-ubyte");
-    MNIST mnist_train = MNIST(data_path, labels_path);
-    std::cout << "Datasets successfully loaded" << std::endl;
+    std::cout << "Loading dataset ..." << std::endl;
+    std::string train_data_path = get_model_path("train-images-idx3-ubyte");
+    std::string train_labels_path = get_model_path("train-labels-idx1-ubyte");
+    MNIST mnist_train = MNIST(train_data_path, train_labels_path);
+    std::string test_data_path = get_model_path("t10k-images-idx3-ubyte");
+    std::string test_labels_path = get_model_path("t10k-labels-idx1-ubyte");
+    MNIST mnist_test = MNIST(test_data_path, test_labels_path);
+    std::cout << "Dataset loaded." << std::endl;
 
     int batch_size = 10;
-    DataLoader mnist_train_loader(&mnist_train, batch_size);
+    DataLoader train_dataloader(&mnist_train, batch_size);
+    DataLoader test_dataloader(&mnist_test, batch_size);
 
-    std::cout << "Visualizing first batch of training data" << std::endl;
-    for (auto batch : mnist_train_loader)
+    NeuralNetwork model;
+    CrossEntropy loss_fn;
+    float learning_rate = 0.001f;
+    SGD optimizer(model.parameters(), learning_rate);
+
+    int n_epochs = 3;
+    for (int epoch = 0; epoch < n_epochs; epoch++)
     {
-        for (auto item : batch)
-        {
-            Dataset::visualize_image(item.second);
-            std::cout << mnist_train.label_to_class(item.first) << std::endl;
-        }
-        break;
+        std::cout << "[Epoch " << epoch << "/" << n_epochs << "] Training ..." << std::endl;
+        train(train_dataloader, model, loss_fn, optimizer);
+        std::cout << "[Epoch " << epoch << "/" << n_epochs << "] Testing ..." << std::endl;
+        test(train_dataloader, model, loss_fn);
     }
+
+    auto state_dict = model.state_dict();
+    std::string path = get_model_path();
+    Serializer::save(state_dict, path);
+}
+
+int main()
+{
+    train_new_mnist_model();
 
     return 0;
 }
