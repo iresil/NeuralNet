@@ -130,9 +130,44 @@ void train_new_mnist_model()
     Serializer::save(state_dict, path);
 }
 
+void inference_on_saved_model()
+{
+    NeuralNetwork model;
+    std::cout << "Loading model ..." << std::endl;
+    std::string path = get_model_path();
+    auto loaded_state_dict = Serializer::load(path);
+    model.load_state_dict(loaded_state_dict);
+
+    std::cout << "Loading test set ..." << std::endl;
+    std::string test_data_path = get_model_path("t10k-images-idx3-ubyte");
+    std::string test_labels_path = get_model_path("t10k-labels-idx1-ubyte");
+    MNIST mnist_test = MNIST(test_data_path, test_labels_path);
+
+    int n_samples = 10;
+    std::vector<int> all_indices(mnist_test.get_length());
+    std::iota(all_indices.begin(), all_indices.end(), 0);
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(all_indices.begin(), all_indices.end(), g);
+    std::vector<int> indices(all_indices.begin(), all_indices.begin() + n_samples);
+
+    for (int i = 0; i < n_samples; i++)
+    {
+        std::cout << "Sample " << i << " of " << n_samples << std::endl;
+        std::pair<int, std::shared_ptr<Tensor>> sample_image = mnist_test.get_item(indices[i]);
+        Dataset::visualize_image(sample_image.second);
+        auto output = model(sample_image.second);
+        int predicted_class = output->argmax();
+        std::cout << "Predicted Class: " << mnist_test.label_to_class(predicted_class) << std::endl;
+        std::cout << "Actual Class: " << mnist_test.label_to_class(sample_image.first) << std::endl;
+        std::cout << "=======================================" << std::endl;
+    }
+}
+
 int main()
 {
     train_new_mnist_model();
+    //inference_on_saved_model();
 
     return 0;
 }
