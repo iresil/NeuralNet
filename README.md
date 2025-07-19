@@ -52,6 +52,32 @@ The solution can be built using **Visual Studio 2022** and it contains 6 differe
 - **NeuralNet_Data**: C++ static library that contains everything related to saving and loading both input and output data.
 - **NeuralNet_Test**: Google Test project to ensure code correctness.
 
+## Core Components
+- **Tensor**: This is not a building block of the neural network per se, but it encapsulates the math that's necessary
+  for the neural network to operate.
+- **Input Layer**: The input layer usually operates on tensors of various sizes, reshaping them into flat vectors
+  on which the rest of the transformations will be applied.
+- **Fully Connected Layer**: The fully connected layer is the most important part of a neural network.
+  It applies a _learnable affine transformation_ to its inputs. An affine transformation is just a linear transformation
+  (matrix multiplication) followed by a translation (the addition of a bias vector). In geometry, these operations preserve points,
+  straight lines, and planes (they maintain "affine structure"). Specifically in neural networks, the weight and bias inputs
+  are not fixed. The model learns them by minimizing a loss function during training, using backpropagation and gradient descent.
+  So, the transformation is learnable, because the neural network tunes weight and bias to fit the data.
+- **Activation Layer**: Because executing multiple linear transformations one after the other would just lead to
+  a different linear transformation, an activation function is necessary, to introduce nonlinearity to the neural network.
+  This helps the neural network identify and represent complex patterns or relationships in the data. The activation layer
+  is a software abstraction that wraps the activation function so that it can be easily defined as part of the model graph.
+- **Loss Function**: This is what guides the learning process in neural networks. A loss function is what quantifies the difference
+  between the model's predictions and the actual values, providing feedback to minimize errors.
+
+## Core Training Functionality
+- **Forward Propagation**: During forward propagation, input data passes through each subsequent layer of the neural network,
+  so that the final prediction can be generated.
+- **Backward Propagation**: During backward propagation (or backpropagation), the neural network "learns by its mistakes".
+  As soon as the prediction is generated, it is compared to the desired value. The loss is calculated and then that loss is propagated
+  through the neural network's layers in reverse order, so that weights and biases per layer can be adjusted. This is called gradient
+  descent.
+
 ## Tensors
 ### Automatic Differentiation (Autograd)
 #### Rules for Tensor Addition (Elementwise Addition)
@@ -93,8 +119,20 @@ y = W \cdot x + b
 - $`W`$: Weight of shape `[output_dim, input_dim]`
 - $`b`$: Bias vector of shape `[output_dim]`
 
-### Rectified Linear Unit Layer (ReLU)
-Applies the rectified linear unit function element-wise, essentially removing all negative values from the input tensor.
+### Activation Layer
+Some possible activation functions that can be applied by the activation layer are the following
+(in our case, we're going to be using the ReLU function):
+
+| Function | Formula | Output Range | Description |
+| --- | :---: | :---: | --- |
+| Sigmoid | $`\sigma(x) = \frac{1}{1 + e^{-x}}`$ | $`(0, 1)`$ | S-shaped; maps input to probability-like values |
+| ReLU | $`\text{ReLU}(x) = \max(0, x)`$ | $`[0, \infty)`$ | Passes positive values; zeros out negatives |
+| Leaky ReLU | $`\text{LeakyReLU}(x) = \max(\alpha x, x)`$ | $`(-\infty, \infty)`$ | Like ReLU but allows small slope for negatives |
+| Tanh | $`\tanh(x) = \frac{e^x - e^{-x}}{e^x + e^{-x}}`$ | $`(-1, 1)`$ | S-shaped; zero-centered output for balanced updates |
+
+#### Rectified Linear Unit Layer (ReLU)
+This is an activation layer that applies the rectified linear unit function element-wise,
+essentially removing all negative values from the input tensor.
 ```mermaid
 xychart-beta
     line [0, 0, 0, 2, 4]
@@ -111,6 +149,8 @@ The normalized output is then compatible with various loss functions, ensuring t
 ```
 
 ## Loss Functions
+What follows is a mapping between various loss functions, their formulas and the type of predictions to which they can be applied:
+
 | Prediction Type | Loss Type | Loss Function | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Formula&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Notes |
 | --- | --- | :---: | --- | --- |
 | Continuous Values | Regression | Mean Squared Error | $`\text{MSE} = \frac{1}{n} \sum_{i=1}^{n} (y_i - \hat{y}_i)^2`$ | Sensitive to Outliers |
