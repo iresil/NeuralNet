@@ -14,6 +14,9 @@ std::vector<int> Dataset::read_mnist_labels(std::string path)
         int magic_number = 0;
         int item_count = 0;
         file.read((char*)&magic_number, sizeof(magic_number));
+        // We're reading the bytes of a big-endian file while running the code on a little-endian system,
+        // so byte order will be reversed during reading (which will also reverse the resulting number).
+        // We reverse the number back, to ensure that the most significant digit will be first.
         magic_number = reverse_int(magic_number);
         if (magic_number != 2049)
         {
@@ -42,6 +45,9 @@ std::vector<std::vector<std::vector<float>>> Dataset::read_mnist(std::string pat
         int n_rows = 0;
         int n_cols = 0;
         file.read((char*)&magic_number, sizeof(magic_number));
+        // We're reading the bytes of a big-endian file while running the code on a little-endian system,
+        // so byte order will be reversed during reading (which will also reverse the resulting number).
+        // We reverse the number back, to ensure that the most significant digit will be first.
         magic_number = reverse_int(magic_number);
         if (magic_number != 2051)
         {
