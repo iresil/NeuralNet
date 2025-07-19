@@ -119,9 +119,9 @@ void train_new_mnist_model()
     int n_epochs = 3;
     for (int epoch = 0; epoch < n_epochs; epoch++)
     {
-        std::cout << "[Epoch " << epoch << "/" << n_epochs << "] Training ..." << std::endl;
+        std::cout << "[Epoch " << (epoch + 1) << "/" << n_epochs << "] Training ..." << std::endl;
         train(train_dataloader, model, loss_fn, optimizer);
-        std::cout << "[Epoch " << epoch << "/" << n_epochs << "] Testing ..." << std::endl;
+        std::cout << "[Epoch " << (epoch + 1) << "/" << n_epochs << "] Testing ..." << std::endl;
         test(train_dataloader, model, loss_fn);
     }
 
