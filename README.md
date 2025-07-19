@@ -57,26 +57,33 @@ The solution can be built using **Visual Studio 2022** and it contains 6 differe
   for the neural network to operate.
 - **Input Layer**: The input layer usually operates on tensors of various sizes, reshaping them into flat vectors
   on which the rest of the transformations will be applied.
-- **Fully Connected Layer**: The fully connected layer is the most important part of a neural network.
+- **Fully Connected Layer**: The fully connected (or dense) layer is the most important part of a neural network.
   It applies a _learnable affine transformation_ to its inputs. An affine transformation is just a linear transformation
   (matrix multiplication) followed by a translation (the addition of a bias vector). In geometry, these operations preserve points,
   straight lines, and planes (they maintain "affine structure"). Specifically in neural networks, the weight and bias inputs
   are not fixed. The model learns them by minimizing a loss function during training, using backpropagation and gradient descent.
   So, the transformation is learnable, because the neural network tunes weight and bias to fit the data.
+- **Neuron**: A neuron is a scalar value on which the learnable affine transformation of fully connected layers is applied.
+  When defining a dense layer, the number of input and output features is necessary. The number of input features is the number of
+  neurons produced by the previous layer and the number of output features is the number of neurons that this layer will produce.
+  So a layer with 10 input neurons and 5 output neurons is a layer with a weight tensor of shape [5,10] and a bias tensor of shape [5].
 - **Activation Layer**: Because executing multiple linear transformations one after the other would just lead to
   a different linear transformation, an activation function is necessary, to introduce nonlinearity to the neural network.
   This helps the neural network identify and represent complex patterns or relationships in the data. The activation layer
   is a software abstraction that wraps the activation function so that it can be easily defined as part of the model graph.
 - **Loss Function**: This is what guides the learning process in neural networks. A loss function is what quantifies the difference
   between the model's predictions and the actual values, providing feedback to minimize errors.
+- **Optimizer**: After a prediction is made and the loss is calculated, the optimizer is what achieves minimization of the loss
+  by iteratively adjusting weights and biases, according to the defined learning rate.
 
-## Core Training Functionality
-- **Forward Propagation**: During forward propagation, input data passes through each subsequent layer of the neural network,
-  so that the final prediction can be generated.
-- **Backward Propagation**: During backward propagation (or backpropagation), the neural network "learns by its mistakes".
-  As soon as the prediction is generated, it is compared to the desired value. The loss is calculated and then that loss is propagated
-  through the neural network's layers in reverse order, so that weights and biases per layer can be adjusted. This is called gradient
-  descent.
+## Core Training Steps
+1. **Forward Propagation**: During forward propagation, input data passes through each subsequent layer of the neural network,
+   so that the final prediction can be generated.
+2. **Loss Calculation**: The distance (loss) between prediction and desired value is calculated.
+3. **Backward Propagation**: During backward propagation (or backpropagation), the neural network "learns by its mistakes".
+   The loss is propagated through the neural network's layers in reverse order, so that weights and biases per layer can be
+   adjusted. This is called gradient descent.
+4. **Optimizer Update**: Performs the actual parameter (weight and bias) adjustment.
 
 ## Tensors
 ### Automatic Differentiation (Autograd)
@@ -164,9 +171,24 @@ What follows is a mapping between various loss functions, their formulas and the
 | Metric Learning | Similarity (Pairwise) | Contrastive Loss | $`L_{\text{cont}} = (1 - Y) \cdot D^2 + Y \cdot \max(0, m - D)^2`$ | Encourages similar items to be close; dissimilar items to be farther than margin $`m`$ |
 | Metric Learning | Similarity (Triplet) | Triplet Loss | $`L_{\text{triplet}} = \max(0, D_{ap} - D_{an} + \alpha)`$ | Trains model to separate anchor from negative by at least margin $`\alpha`$ |
 
-## Optimization
-**Stochastic Gradient Descent (SGD)** was used as an Optimizer, to achieve minimization of the loss function by iteratively adjusting weights,
-according to the defined learning rate.
+## Optimizer Types
+What follows is a brief description of the most commonly used types of optimizers in neural network training.
+In our case, we're going to be using **Stochastic Gradient Descent**.
+
+| Optimizer | Description | Key Features / Notes |
+| --- | --- | --- |
+| SGD (Stochastic Gradient Descent) | Updates parameters using a single sample or mini-batch | Simple and widely used; sensitive to learning rate |
+| SGD with Momentum | Adds a velocity term to accelerate updates in consistent gradient directions | Helps avoid local minima and slow convergence |
+| Nesterov Accelerated Gradient (NAG) | Like momentum, but looks ahead before computing gradient | More responsive to changes in gradient direction |
+| Adagrad | Adaptive learning rates for each parameter based on historical gradients | Good for sparse data; learning rate shrinks over time |
+| RMSprop | Maintains moving average of squared gradients | Solves Adagrad’s shrinking learning rate problem |
+| Adam (Adaptive Moment Estimation) | Combines momentum and RMSprop ideas | Most popular; efficient and adaptive |
+| AdamW | Adam with decoupled weight decay | Better regularization for large models |
+| AdaMax | Variant of Adam using infinity norm | More stable in some cases |
+| Nadam | Adam + Nesterov accelerated gradient | Faster convergence in some settings |
+| FTRL (Follow-The-Regularized-Leader) | Combines L1 and L2 regularization, good for sparse data | Often used in large-scale recommendation systems |
+| L-BFGS | Quasi-Newton method, uses second-order approximation | Not common in deep learning due to memory overhead |
+| AMSGrad | Modification of Adam to guarantee convergence | Fixes potential non-convergence of Adam |
 
 ## Serialization
 ### Stored Byte Sizes
