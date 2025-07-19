@@ -35,7 +35,7 @@ std::vector<std::pair<int, std::shared_ptr<Tensor>>> DataLoader::Iterator::opera
     return batch;
 }
 
-bool DataLoader::Iterator::operator!=(const Iterator& other)
+bool DataLoader::Iterator::operator!=(const Iterator &other)
 {
     return _index != other._index;
 }

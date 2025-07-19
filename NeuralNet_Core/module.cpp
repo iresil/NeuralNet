@@ -63,7 +63,7 @@ std::unordered_map<std::string, std::shared_ptr<Tensor>> Module::state_dict() co
 
 void Module::load_state_dict(std::unordered_map<std::string, std::shared_ptr<Tensor>> &state_dict)
 {
-    for (const auto& p : _parameters)
+    for (const auto &p : _parameters)
     {
         auto it = state_dict.find(p.first);
         if (it == state_dict.end())

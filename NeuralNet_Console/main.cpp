@@ -16,7 +16,7 @@
 #include "../NeuralNet_Training/optimizer_sgd.h"
 #include "../NeuralNet_Core/serializer.h"
 
-void train(DataLoader& dataloader, NeuralNetwork& model, CrossEntropy& loss_fn, SGD& optimizer)
+void train(DataLoader &dataloader, NeuralNetwork &model, CrossEntropy &loss_fn, SGD& optimizer)
 {
     std::size_t log_interval = 100;
     std::size_t batch_n = 0;
@@ -56,7 +56,7 @@ void train(DataLoader& dataloader, NeuralNetwork& model, CrossEntropy& loss_fn, 
     }
 }
 
-void test(DataLoader& dataloader, NeuralNetwork& model, CrossEntropy& loss_fn)
+void test(DataLoader &dataloader, NeuralNetwork &model, CrossEntropy &loss_fn)
 {
     float running_loss = 0.0f;
     std::size_t correct = 0;
