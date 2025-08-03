@@ -190,7 +190,24 @@ In our case, we're going to be using **Stochastic Gradient Descent**.
 | L-BFGS | Quasi-Newton method, uses second-order approximation | Not common in deep learning due to memory overhead |
 | AMSGrad | Modification of Adam to guarantee convergence | Fixes potential non-convergence of Adam |
 
-## Serialization
+## Training Sets
+### MNIST Dataset Structure
+```mermaid
+packet-beta
+  0-3: "Magic Number"
+  4-7: "Image Count"
+  8-11: "Row Count"
+  12-15: "Column Count"
+  16-95: "Pixels (Variable Length - one unsigned byte per pixel)"
+```
+### Endianness
+The numbers stored in MNIST files are in big-endian format (most significant byte first).
+Conversely, most modern hardware stores numbers in little-endian format.
+Since this repository contains code that's supposed to run on Windows (and no version of Windows released so far runs on big-endian architectures),
+we can be certain that when reading the file we're going to interpret the raw bytes in little-endian format, thus reversing the stored number.
+This is why we need to reverse the number back, so that we can interpret it correctly (i.e. most significant byte first).
+
+## Model Serialization
 ### Stored Byte Sizes
 ```mermaid
 packet-beta
@@ -209,20 +226,3 @@ packet-beta
   160-191: "[Elements 2] Raw Data (Variable Length Array = Elements 2 Count * float Size)"
   192-223: "..."
 ```
-
-## Training
-### MNIST Dataset Structure
-```mermaid
-packet-beta
-  0-3: "Magic Number"
-  4-7: "Image Count"
-  8-11: "Row Count"
-  12-15: "Column Count"
-  16-95: "Pixels (Variable Length - one unsigned byte per pixel)"
-```
-
-The numbers stored in MNIST files are in big-endian format (most significant byte first).
-Conversely, most modern hardware stores numbers in little-endian format.
-Since this repository contains code that's supposed to run on Windows (and no version of Windows released so far runs on big-endian architectures),
-we can be certain that when reading the file we're going to interpret the raw bytes in little-endian format, thus reversing the stored number.
-This is why we need to reverse the number back, so that we can interpret it correctly (i.e. most significant byte first).
