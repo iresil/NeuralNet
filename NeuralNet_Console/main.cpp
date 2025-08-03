@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <iostream>
 #include <iomanip>
+#include <cstdlib>
 #include <string>
 #include <numeric>
 #include <random>
@@ -83,15 +84,51 @@ void test(DataLoader &dataloader, NeuralNetwork &model, CrossEntropy &loss_fn)
               << "%\n  avg loss" << std::setprecision(6) << avg_loss << std::endl;
 }
 
-std::string get_model_path(std::string filename = "mnist.nn") {
-    char path[MAX_PATH];
-    DWORD length = GetModuleFileNameA(nullptr, path, MAX_PATH);
-    if (length == 0) {
-        return std::string();
+std::string safe_getenv(const char *name)
+{
+    char *buffer = nullptr;
+    size_t len = 0;
+    if (_dupenv_s(&buffer, &len, name) == 0 && buffer != nullptr)
+    {
+        std::string value(buffer);
+        free(buffer); // Free memory allocated by _dupenv_s
+        return value;
     }
+    return std::string();
+}
 
-    std::filesystem::path exePath(path);
-    std::filesystem::path folderPath = exePath.parent_path();
+bool is_visual_studio()
+{
+    // Environment Variables set at runtime
+    std::string vs_env = safe_getenv("VSINSTALLDIR");
+    bool is_env_var_present = vs_env.c_str() != nullptr;
+
+    // Might be true for non-VS debuggers, like WinDbg
+    bool is_debugger_present = IsDebuggerPresent();
+
+    return is_env_var_present && is_debugger_present;
+}
+
+std::string get_model_path(std::string filename = "mnist.nn")
+{
+    std::filesystem::path folderPath;
+
+    if (is_visual_studio())
+    {
+        folderPath = std::filesystem::path(__FILE__).parent_path().parent_path().append("models");
+    }
+    else
+    {
+        char path[MAX_PATH];
+        DWORD length = GetModuleFileNameA(nullptr, path, MAX_PATH);
+        if (length == 0)
+        {
+            return std::string();
+        }
+
+        std::filesystem::path exePath(path);
+        folderPath = exePath.parent_path();
+    }
     folderPath.append(filename);
     return folderPath.string();
 }
