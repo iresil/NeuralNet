@@ -8,6 +8,9 @@
 void Serializer::save(const std::unordered_map<std::string, std::shared_ptr<Tensor>> &state_dict,
                       const std::string &filename)
 {
+    std::filesystem::path filePath(filename);
+    std::filesystem::create_directories(filePath.parent_path());
+
     std::ofstream file(filename, std::ios::binary);
     file.write(reinterpret_cast<const char *>(&MAGIC_NUMBER_), sizeof(int));
     for (const auto &[weight_name, weight] : state_dict)
