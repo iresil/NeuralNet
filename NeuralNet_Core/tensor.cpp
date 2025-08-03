@@ -1,4 +1,7 @@
 #include "pch.h"
+#include <atomic>
+#include <numeric>
+#include <execution>
 #include "tensor.h"
 
 Tensor::Tensor(float data, bool requires_grad,
@@ -233,6 +236,13 @@ float &Tensor::operator()(std::size_t i, std::size_t j)
     throw std::invalid_argument("Can only double index into 2D tensors");
 }
 
+void atomic_add(std::atomic<float> &target, float value) {
+    float old_val = target.load();
+
+    // old_val is updated automatically to the current value if the exchange fails
+    while (!target.compare_exchange_weak(old_val, old_val + value)) { }
+}
+
 std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
 {
     if (_shape.size() == 0 && other->shape().size() == 0)  // Scalar + Scalar
@@ -256,11 +266,14 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
     }
     else if (_shape.size() == 0 && other->shape().size() == 1)  // Scalar + 1D
     {
-        std::vector<float> result;
-        for (std::size_t i = 0; i < other->shape()[0]; i++)
+        std::vector<float> result(other->shape()[0]);
+
+        std::vector<std::size_t> indices(other->shape()[0]);
+        std::iota(indices.begin(), indices.end(), 0);
+        std::for_each(std::execution::par, indices.begin(), indices.end(), [&](std::size_t i)
         {
-            result.push_back(item() + other->operator()(i));
-        }
+            result[i] = item() + other->operator()(i);
+        });
         if (_requires_grad || other->requires_grad())
         {
             std::shared_ptr<Tensor> self = shared_from_this();
@@ -270,11 +283,15 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
                 // Because a scalar is added to a vector, the scalar was broadcast during forward pass.
                 // When a scalar is broadcast forward, its gradient must be the sum of all gradients from the broadcasted elements.
                 // The vector receives grad_output directly because it wasn't broadcast.
-                float grad_self = 0;
-                for (std::size_t i = 0; i < grad_output.size(); i++)
+                std::atomic<float> grad_self = 0;
+
+                std::vector<std::size_t> indices(grad_output.size());
+                std::iota(indices.begin(), indices.end(), 0);
+                std::for_each(std::execution::par, indices.begin(), indices.end(), [&](std::size_t i)
                 {
-                    grad_self += grad_output[i];
-                }
+                    atomic_add(grad_self, grad_output[i]);
+                });
+
                 self->add_to_grad({ grad_self });
                 other->add_to_grad(grad_output);
             };
@@ -284,16 +301,22 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
     }
     else if (_shape.size() == 0 && other->shape().size() == 2)  // Scalar + 2D
     {
-        std::vector<std::vector<float>> result;
-        for (std::size_t i = 0; i < other->shape()[0]; i++)
+        std::vector<std::vector<float>> result(other->shape()[0]);
+
+        std::vector<std::size_t> indices_i(other->shape()[0]);
+        std::iota(indices_i.begin(), indices_i.end(), 0);
+        std::for_each(std::execution::par, indices_i.begin(), indices_i.end(), [&](std::size_t i)
         {
-            std::vector<float> result_i;
-            for (std::size_t j = 0; j < other->shape()[1]; j++)
+            std::vector<float> result_i(other->shape()[1]);
+
+            std::vector<std::size_t> indices_j(other->shape()[1]);
+            std::iota(indices_j.begin(), indices_j.end(), 0);
+            std::for_each(std::execution::par, indices_j.begin(), indices_j.end(), [&](std::size_t j)
             {
-                result_i.push_back(item() + other->operator()(i, j));
-            }
-            result.push_back(result_i);
-        }
+                result_i[j] = item() + other->operator()(i, j);
+            });
+            result[i] = result_i;
+        });
         if (_requires_grad || other->requires_grad())
         {
             std::shared_ptr<Tensor> self = shared_from_this();
@@ -303,11 +326,15 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
                 // Because a scalar is added to a vector, the scalar was broadcast during forward pass.
                 // When a scalar is broadcast forward, its gradient must be the sum of all gradients from the broadcasted elements.
                 // The vector receives grad_output directly because it wasn't broadcast.
-                float grad_self = 0;
-                for (std::size_t i = 0; i < grad_output.size(); i++)
+                std::atomic<float> grad_self = 0;
+
+                std::vector<std::size_t> indices(grad_output.size());
+                std::iota(indices.begin(), indices.end(), 0);
+                std::for_each(std::execution::par, indices.begin(), indices.end(), [&](std::size_t i)
                 {
-                    grad_self += grad_output[i];
-                }
+                    atomic_add(grad_self, grad_output[i]);
+                });
+
                 self->add_to_grad({ grad_self });
                 other->add_to_grad(grad_output);
             };
@@ -317,11 +344,14 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
     }
     else if (_shape.size() == 1 && other->shape().size() == 0)  // 1D + Scalar
     {
-        std::vector<float> result;
-        for (std::size_t i = 0; i < _shape[0]; i++)
+        std::vector<float> result(_shape[0]);
+
+        std::vector<std::size_t> indices(_shape[0]);
+        std::iota(indices.begin(), indices.end(), 0);
+        std::for_each(std::execution::par, indices.begin(), indices.end(), [&](std::size_t i)
         {
-            result.push_back(operator()(i) + other->item());
-        }
+            result[i] = operator()(i) + other->item();
+        });
         if (_requires_grad || other->requires_grad())
         {
             std::shared_ptr<Tensor> self = shared_from_this();
@@ -331,11 +361,15 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
                 // Because a scalar is added to a vector, the scalar was broadcast during forward pass.
                 // When a scalar is broadcast forward, its gradient must be the sum of all gradients from the broadcasted elements.
                 // The vector receives grad_output directly because it wasn't broadcast.
-                float grad_other = 0;
-                for (std::size_t i = 0; i < grad_output.size(); i++)
+                std::atomic<float> grad_other = 0;
+
+                std::vector<std::size_t> indices(grad_output.size());
+                std::iota(indices.begin(), indices.end(), 0);
+                std::for_each(std::execution::par, indices.begin(), indices.end(), [&](std::size_t i)
                 {
-                    grad_other += grad_output[i];
-                }
+                    atomic_add(grad_other, grad_output[i]);
+                });
+
                 self->add_to_grad(grad_output);
                 other->add_to_grad({ grad_other });
             };
@@ -345,16 +379,22 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
     }
     else if (_shape.size() == 2 && other->shape().size() == 0)  // 2D + Scalar
     {
-        std::vector<std::vector<float>> result;
-        for (std::size_t i = 0; i < _shape[0]; i++)
+        std::vector<std::vector<float>> result(_shape[0]);
+
+        std::vector<std::size_t> indices_i(_shape[0]);
+        std::iota(indices_i.begin(), indices_i.end(), 0);
+        std::for_each(std::execution::par, indices_i.begin(), indices_i.end(), [&](std::size_t i)
         {
-            std::vector<float> result_i;
-            for (std::size_t j = 0; j < _shape[1]; j++)
+            std::vector<float> result_i(_shape[1]);
+
+            std::vector<std::size_t> indices_j(_shape[1]);
+            std::iota(indices_j.begin(), indices_j.end(), 0);
+            std::for_each(std::execution::par, indices_j.begin(), indices_j.end(), [&](std::size_t j)
             {
-                result_i.push_back(operator()(i, j) + other->item());
-            }
-            result.push_back(result_i);
-        }
+                result_i[j] = operator()(i, j) + other->item();
+            });
+            result[i] = result_i;
+        });
         if (_requires_grad || other->requires_grad())
         {
             std::shared_ptr<Tensor> self = shared_from_this();
@@ -364,11 +404,15 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
                 // Because a scalar is added to a vector, the scalar was broadcast during forward pass.
                 // When a scalar is broadcast forward, its gradient must be the sum of all gradients from the broadcasted elements.
                 // The vector receives grad_output directly because it wasn't broadcast.
-                float grad_other = 0;
-                for (std::size_t i = 0; i < grad_output.size(); i++)
+                std::atomic<float> grad_other = 0;
+
+                std::vector<std::size_t> indices(grad_output.size());
+                std::iota(indices.begin(), indices.end(), 0);
+                std::for_each(std::execution::par, indices.begin(), indices.end(), [&](std::size_t i)
                 {
-                    grad_other += grad_output[i];
-                }
+                    atomic_add(grad_other, grad_output[i]);
+                });
+
                 self->add_to_grad(grad_output);
                 other->add_to_grad({ grad_other });
             };
@@ -378,11 +422,14 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
     }
     else if (_shape.size() == 1 && other->shape().size() == 1 && _shape[0] == other->shape()[0])  // 1D + 1D
     {
-        std::vector<float> result;
-        for (std::size_t i = 0; i < _shape[0]; i++)
+        std::vector<float> result(_shape[0]);
+
+        std::vector<std::size_t> indices(_shape[0]);
+        std::iota(indices.begin(), indices.end(), 0);
+        std::for_each(std::execution::par, indices.begin(), indices.end(), [&](std::size_t i)
         {
-            result.push_back(operator()(i) + other->operator()(i));
-        }
+            result[i] = operator()(i) + other->operator()(i);
+        });
         if (_requires_grad || other->requires_grad())
         {
             std::shared_ptr<Tensor> self = shared_from_this();
@@ -404,16 +451,22 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
         {
             throw std::invalid_argument("Second dimensions are not equal");
         }
-        std::vector<std::vector<float>> result;
-        for (std::size_t i = 0; i < _shape[0]; i++)
+        std::vector<std::vector<float>> result(_shape[0]);
+
+        std::vector<std::size_t> indices_i(_shape[0]);
+        std::iota(indices_i.begin(), indices_i.end(), 0);
+        std::for_each(std::execution::par, indices_i.begin(), indices_i.end(), [&](std::size_t i)
         {
-            std::vector<float> result_i;
-            for (std::size_t j = 0; j < _shape[1]; j++)
+            std::vector<float> result_i(_shape[1]);
+
+            std::vector<std::size_t> indices_j(_shape[1]);
+            std::iota(indices_j.begin(), indices_j.end(), 0);
+            std::for_each(std::execution::par, indices_j.begin(), indices_j.end(), [&](std::size_t j)
             {
-                result_i.push_back(operator()(i, j) + other->operator()(i, j));
-            }
-            result.push_back(result_i);
-        }
+                result_i[j] = operator()(i, j) + other->operator()(i, j);
+            });
+            result[i] = result_i;
+        });
         if (_requires_grad || other->requires_grad())
         {
             std::shared_ptr<Tensor> self = shared_from_this();
@@ -451,24 +504,31 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
 
     if (_shape.size() == 1 && other->shape().size() == 1)  // Dot Product: 1D x 1D -> float
     {
-        float result = 0;
-        for (std::size_t i = 0; i < _shape[0]; i++)
+        std::atomic<float> result = 0;
+
+        std::vector<std::size_t> indices(_shape[0]);
+        std::iota(indices.begin(), indices.end(), 0);
+        std::for_each(std::execution::par, indices.begin(), indices.end(), [&](std::size_t i)
         {
-            result += operator()(i) * other->operator()(i);
-        }
+            atomic_add(result, operator()(i) * other->operator()(i));
+        });
         if (_requires_grad || other->requires_grad())
         {
             std::shared_ptr<Tensor> self = shared_from_this();
             std::vector<std::shared_ptr<Tensor>> parents{ self, other };
             std::function<void(const std::vector<float>&)> gradfn = [self, other](const std::vector<float> &grad_output)
             {
-                std::vector<float> grad_self;
-                std::vector<float> grad_other;
-                for (std::size_t i = 0; i < self->count(); i++)
+                std::vector<float> grad_self(self->count());
+                std::vector<float> grad_other(self->count());
+
+                std::vector<std::size_t> indices(self->count());
+                std::iota(indices.begin(), indices.end(), 0);
+                std::for_each(std::execution::par, indices.begin(), indices.end(), [&](std::size_t i)
                 {
-                    grad_self.push_back(other->operator()(i) * grad_output[0]);
-                    grad_other.push_back(self->operator()(i) * grad_output[0]);
-                }
+                    grad_self[i] = other->operator()(i) * grad_output[0];
+                    grad_other[i] = self->operator()(i) * grad_output[0];
+                });
+
                 self->add_to_grad(grad_self);
                 other->add_to_grad(grad_other);
             };
@@ -478,40 +538,59 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
     }
     else if (_shape.size() == 2 && other->shape().size() == 1)  // Matrix-Vector Product: 2D x 1D -> 1D
     {
-        std::vector<float> result;
-        for (std::size_t i = 0; i < _shape[0]; i++)
+        std::vector<float> result(_shape[0]);
+
+        std::vector<std::size_t> indices_i(_shape[0]);
+        std::iota(indices_i.begin(), indices_i.end(), 0);
+        std::for_each(std::execution::par, indices_i.begin(), indices_i.end(), [&](std::size_t i)
         {
-            float result_i = 0;
-            for (std::size_t j = 0; j < _shape[1]; j++)
+            std::atomic<float> result_i = 0;
+
+            std::vector<std::size_t> indices_j(_shape[1]);
+            std::iota(indices_j.begin(), indices_j.end(), 0);
+            std::for_each(std::execution::par, indices_j.begin(), indices_j.end(), [&](std::size_t j)
             {
-                result_i += operator()(i, j) * other->operator()(j);
-            }
-            result.push_back(result_i);
-        }
+                atomic_add(result_i, operator()(i, j) * other->operator()(j));
+            });
+            result[i] = result_i;
+        });
         if (_requires_grad || other->requires_grad())
         {
             std::shared_ptr<Tensor> self = shared_from_this();
             std::vector<std::shared_ptr<Tensor>> parents{ self, other };
             std::function<void(const std::vector<float>&)> gradfn = [self, other](const std::vector<float> &grad_output)
             {
-                std::vector<float> grad_self;
-                for (std::size_t i = 0; i < self->shape()[0]; i++)
+                std::vector<float> grad_self(self->shape()[0] * self->shape()[1]);
+
+                std::vector<std::size_t> indices_i(self->shape()[0]);
+                std::iota(indices_i.begin(), indices_i.end(), 0);
+                std::for_each(std::execution::par, indices_i.begin(), indices_i.end(), [&](std::size_t i)
                 {
-                    for (std::size_t j = 0; j < self->shape()[1]; j++)
+                    std::vector<std::size_t> indices_j(self->shape()[1]);
+                    std::iota(indices_j.begin(), indices_j.end(), 0);
+                    std::for_each(std::execution::par, indices_j.begin(), indices_j.end(), [&](std::size_t j)
                     {
-                        grad_self.push_back(other->operator()(j) * grad_output[i]);
-                    }
-                }
-                std::vector<float> grad_other;
-                for (std::size_t i = 0; i < other->shape()[0]; i++)
+                        grad_self[i * self->shape()[1] + j] = other->operator()(j) * grad_output[i];
+                    });
+                });
+
+                std::vector<float> grad_other(other->shape()[0]);
+
+                std::vector<std::size_t> indices_i_other(other->shape()[0]);
+                std::iota(indices_i_other.begin(), indices_i_other.end(), 0);
+                std::for_each(std::execution::par, indices_i_other.begin(), indices_i_other.end(), [&](std::size_t i)
                 {
-                    float grad_other_i = 0;
-                    for (std::size_t j = 0; j < self->shape()[0]; j++)
+                    std::atomic<float> grad_other_i = 0;
+
+                    std::vector<std::size_t> indices_j(self->shape()[0]);
+                    std::iota(indices_j.begin(), indices_j.end(), 0);
+                    std::for_each(std::execution::par, indices_j.begin(), indices_j.end(), [&](std::size_t j)
                     {
-                        grad_other_i += self->operator()(j, i) * grad_output[j];
-                    }
-                    grad_other.push_back(grad_other_i);
-                }
+                        atomic_add(grad_other_i, self->operator()(j, i) * grad_output[j]);
+                    });
+                    grad_other[i] = grad_other_i;
+                });
+
                 self->add_to_grad(grad_self);
                 other->add_to_grad(grad_other);
             };
@@ -521,40 +600,59 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
     }
     else if (_shape.size() == 1 && other->shape().size() == 2)  // Vector-Matrix Product: 1D x 2D -> 1D
     {
-        std::vector<float> result;
-        for (std::size_t i = 0; i < other->shape()[1]; i++)
+        std::vector<float> result(other->shape()[1]);
+
+        std::vector<std::size_t> indices_i(other->shape()[1]);
+        std::iota(indices_i.begin(), indices_i.end(), 0);
+        std::for_each(std::execution::par, indices_i.begin(), indices_i.end(), [&](std::size_t i)
         {
-            float result_i = 0;
-            for (std::size_t j = 0; j < other->shape()[0]; j++)
+            std::atomic<float> result_i = 0;
+
+            std::vector<std::size_t> indices_j(other->shape()[0]);
+            std::iota(indices_j.begin(), indices_j.end(), 0);
+            std::for_each(std::execution::par, indices_j.begin(), indices_j.end(), [&](std::size_t j)
             {
-                result_i += operator()(j) * other->operator()(j, i);
-            }
-            result.push_back(result_i);
-        }
+                atomic_add(result_i, operator()(j) * other->operator()(j, i));
+            });
+            result[i] = result_i;
+        });
         if (_requires_grad || other->requires_grad())
         {
             std::shared_ptr<Tensor> self = shared_from_this();
             std::vector<std::shared_ptr<Tensor>> parents{ self, other };
             std::function<void(const std::vector<float>&)> gradfn = [self, other](const std::vector<float> &grad_output)
             {
-                std::vector<float> grad_self;
-                for (std::size_t i = 0; i < self->shape()[0]; i++)
+                std::vector<float> grad_self(self->shape()[0]);
+
+                std::vector<std::size_t> indices_i(self->shape()[0]);
+                std::iota(indices_i.begin(), indices_i.end(), 0);
+                std::for_each(std::execution::par, indices_i.begin(), indices_i.end(), [&](std::size_t i)
                 {
-                    float grad_self_i = 0;
-                    for (std::size_t j = 0; j < other->shape()[1]; j++)
+                    std::atomic<float> grad_self_i = 0;
+
+                    std::vector<std::size_t> indices_j(other->shape()[1]);
+                    std::iota(indices_j.begin(), indices_j.end(), 0);
+                    std::for_each(std::execution::par, indices_j.begin(), indices_j.end(), [&](std::size_t j)
                     {
-                        grad_self_i += other->operator()(i, j) * grad_output[j];
-                    }
-                    grad_self.push_back(grad_self_i);
-                }
-                std::vector<float> grad_other;
-                for (std::size_t i = 0; i < other->shape()[0]; i++)
+                        atomic_add(grad_self_i, other->operator()(i, j) * grad_output[j]);
+                    });
+                    grad_self[i] = grad_self_i;
+                });
+
+                std::vector<float> grad_other(other->shape()[0] * other->shape()[1]);
+
+                std::vector<std::size_t> indices_i_other(other->shape()[0]);
+                std::iota(indices_i_other.begin(), indices_i_other.end(), 0);
+                std::for_each(std::execution::par, indices_i_other.begin(), indices_i_other.end(), [&](std::size_t i)
                 {
-                    for (std::size_t j = 0; j < other->shape()[1]; j++)
+                    std::vector<std::size_t> indices_j(other->shape()[1]);
+                    std::iota(indices_j.begin(), indices_j.end(), 0);
+                    std::for_each(std::execution::par, indices_j.begin(), indices_j.end(), [&](std::size_t j)
                     {
-                        grad_other.push_back(self->operator()(i) * grad_output[j]);
-                    }
-                }
+                        grad_other[i * other->shape()[1] + j] = self->operator()(i) * grad_output[j];
+                    });
+                });
+
                 self->add_to_grad(grad_self);
                 other->add_to_grad(grad_other);
             };
@@ -564,53 +662,81 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
     }
     else if (_shape.size() == 2 && other->shape().size() == 2) // Matrix-Matrix Product: 2D x 2D -> 2D
     {
-        std::vector<std::vector<float>> result;
-        for (std::size_t i = 0; i < _shape[0]; i++)
+        std::vector<std::vector<float>> result(_shape[0]);
+
+        std::vector<std::size_t> indices_i(_shape[0]);
+        std::iota(indices_i.begin(), indices_i.end(), 0);
+        std::for_each(std::execution::par, indices_i.begin(), indices_i.end(), [&](std::size_t i)
         {
-            std::vector<float> result_i;
-            for (std::size_t j = 0; j < other->shape()[1]; j++)
+            std::vector<float> result_i(other->shape()[1]);
+
+            std::vector<std::size_t> indices_j(other->shape()[1]);
+            std::iota(indices_j.begin(), indices_j.end(), 0);
+            std::for_each(std::execution::par, indices_j.begin(), indices_j.end(), [&](std::size_t j)
             {
-                float result_i_j = 0;
-                for (std::size_t k = 0; k < _shape[1]; k++)
+                std::atomic<float> result_i_j = 0;
+
+                std::vector<std::size_t> indices_k(_shape[1]);
+                std::iota(indices_k.begin(), indices_k.end(), 0);
+                std::for_each(std::execution::par, indices_k.begin(), indices_k.end(), [&](std::size_t k)
                 {
-                    result_i_j += operator()(i, k) * other->operator()(k, j);
-                }
-                result_i.push_back(result_i_j);
-            }
-            result.push_back(result_i);
-        }
+                    atomic_add(result_i_j, operator()(i, k) * other->operator()(k, j));
+                });
+                result_i[j] = result_i_j;
+            });
+            result[i] = result_i;
+        });
+
         if (_requires_grad || other->requires_grad())
         {
             std::shared_ptr<Tensor> self = shared_from_this();
             std::vector<std::shared_ptr<Tensor>> parents{ self, other };
             std::function<void(const std::vector<float>&)> gradfn = [self, other](const std::vector<float> &grad_output)
             {
-                std::vector<float> grad_self;
-                for (std::size_t i = 0; i < self->shape()[0]; i++)
+                std::vector<float> grad_self(self->shape()[0] * self->shape()[1]);
+
+                std::vector<std::size_t> indices_i(self->shape()[0]);
+                std::iota(indices_i.begin(), indices_i.end(), 0);
+                std::for_each(std::execution::par, indices_i.begin(), indices_i.end(), [&](std::size_t i)
                 {
-                    for (std::size_t j = 0; j < self->shape()[1]; j++)
+                    std::vector<std::size_t> indices_j(self->shape()[1]);
+                    std::iota(indices_j.begin(), indices_j.end(), 0);
+                    std::for_each(std::execution::par, indices_j.begin(), indices_j.end(), [&](std::size_t j)
                     {
-                        float grad_self_i_j = 0;
-                        for (std::size_t k = 0; k < other->shape()[1]; k++)
+                        std::atomic<float> grad_self_i_j = 0;
+
+                        std::vector<std::size_t> indices_k(other->shape()[1]);
+                        std::iota(indices_k.begin(), indices_k.end(), 0);
+                        std::for_each(std::execution::par, indices_k.begin(), indices_k.end(), [&](std::size_t k)
                         {
-                            grad_self_i_j += other->operator()(j, k) * grad_output[i * other->shape()[1] + k];
-                        }
-                        grad_self.push_back(grad_self_i_j);
-                    }
-                }
-                std::vector<float> grad_other;
-                for (std::size_t i = 0; i < other->shape()[0]; i++)
+                            atomic_add(grad_self_i_j, other->operator()(j, k) * grad_output[i * other->shape()[1] + k]);
+                        });
+                        grad_self[i * self->shape()[1] + j] = grad_self_i_j;
+                    });
+                });
+
+                std::vector<float> grad_other(other->shape()[0] * other->shape()[1]);
+
+                std::vector<std::size_t> indices_i_other(other->shape()[0]);
+                std::iota(indices_i_other.begin(), indices_i_other.end(), 0);
+                std::for_each(std::execution::par, indices_i_other.begin(), indices_i_other.end(), [&](std::size_t i)
                 {
-                    for (std::size_t j = 0; j < other->shape()[1]; j++)
+                    std::vector<std::size_t> indices_j(other->shape()[1]);
+                    std::iota(indices_j.begin(), indices_j.end(), 0);
+                    std::for_each(std::execution::par, indices_j.begin(), indices_j.end(), [&](std::size_t j)
                     {
-                        float grad_other_i_j = 0;
-                        for (std::size_t k = 0; k < self->shape()[0]; k++)
+                        std::atomic<float> grad_other_i_j = 0;
+
+                        std::vector<std::size_t> indices_k(self->shape()[0]);
+                        std::iota(indices_k.begin(), indices_k.end(), 0);
+                        std::for_each(std::execution::par, indices_k.begin(), indices_k.end(), [&](std::size_t k)
                         {
-                            grad_other_i_j += self->operator()(k, i) * grad_output[k * other->shape()[1] + j];
-                        }
-                        grad_other.push_back(grad_other_i_j);
-                    }
-                }
+                            atomic_add(grad_other_i_j, self->operator()(k, i) * grad_output[k * other->shape()[1] + j]);
+                        });
+                        grad_other[i * other->shape()[1] + j] = grad_other_i_j;
+                    });
+                });
+
                 self->add_to_grad(grad_self);
                 other->add_to_grad(grad_other);
             };
