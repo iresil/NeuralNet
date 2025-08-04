@@ -109,13 +109,13 @@ bool is_visual_studio()
     return is_env_var_present && is_debugger_present;
 }
 
-std::string get_model_path(std::string filename = "mnist.nn")
+std::string get_model_path(std::string filename = "models/mnist.nn")
 {
     std::filesystem::path folderPath;
 
     if (is_visual_studio())
     {
-        folderPath = std::filesystem::path(__FILE__).parent_path().parent_path().append("models");
+        folderPath = std::filesystem::path(__FILE__).parent_path().parent_path();
     }
     else
     {
@@ -136,11 +136,11 @@ std::string get_model_path(std::string filename = "mnist.nn")
 void train_new_mnist_model()
 {
     std::cout << "Loading dataset ..." << std::endl;
-    std::string train_data_path = get_model_path("train-images-idx3-ubyte");
-    std::string train_labels_path = get_model_path("train-labels-idx1-ubyte");
+    std::string train_data_path = get_model_path("data/train-images-idx3-ubyte");
+    std::string train_labels_path = get_model_path("data/train-labels-idx1-ubyte");
     MNIST mnist_train = MNIST(train_data_path, train_labels_path);
-    std::string test_data_path = get_model_path("t10k-images-idx3-ubyte");
-    std::string test_labels_path = get_model_path("t10k-labels-idx1-ubyte");
+    std::string test_data_path = get_model_path("data/t10k-images-idx3-ubyte");
+    std::string test_labels_path = get_model_path("data/t10k-labels-idx1-ubyte");
     MNIST mnist_test = MNIST(test_data_path, test_labels_path);
     std::cout << "Dataset loaded." << std::endl;
 
@@ -176,8 +176,8 @@ void inference_on_saved_model()
     model.load_state_dict(loaded_state_dict);
 
     std::cout << "Loading test set ..." << std::endl;
-    std::string test_data_path = get_model_path("t10k-images-idx3-ubyte");
-    std::string test_labels_path = get_model_path("t10k-labels-idx1-ubyte");
+    std::string test_data_path = get_model_path("data/t10k-images-idx3-ubyte");
+    std::string test_labels_path = get_model_path("data/t10k-labels-idx1-ubyte");
     MNIST mnist_test = MNIST(test_data_path, test_labels_path);
 
     int n_samples = 10;
