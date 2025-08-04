@@ -19,12 +19,13 @@
 
 void train(DataLoader &dataloader, NeuralNetwork &model, CrossEntropy &loss_fn, SGD& optimizer)
 {
-    std::size_t log_interval = 100;
+    std::size_t log_interval = 10;
     std::size_t batch_n = 0;
     std::size_t seen_samples = 0;
 
     for (const auto &batch : dataloader)
     {
+        batch_n++;
         std::shared_ptr<Tensor> total_loss = nullptr;
         std::size_t batch_size = batch.size();
 
@@ -53,7 +54,6 @@ void train(DataLoader &dataloader, NeuralNetwork &model, CrossEntropy &loss_fn, 
         total_loss->backward();
         optimizer.step();
         optimizer.zero_grad();
-        batch_n++;
     }
 }
 
