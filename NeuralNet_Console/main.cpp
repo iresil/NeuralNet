@@ -81,7 +81,7 @@ void test(DataLoader &dataloader, NeuralNetwork &model, CrossEntropy &loss_fn)
     float avg_loss = running_loss / n_samples;
 
     std::cout << std::fixed << "Test error:\n  accuracy: " << std::setprecision(1) << accuracy * 100.0f
-              << "%\n  avg loss" << std::setprecision(6) << avg_loss << std::endl;
+              << "%\n  avg loss: " << std::setprecision(6) << avg_loss << std::endl;
 }
 
 std::string safe_getenv(const char *name)
