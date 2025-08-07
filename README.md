@@ -226,3 +226,8 @@ packet-beta
   160-191: "[Elements 2] Raw Data (Variable Length Array = Elements 2 Count * float Size)"
   192-223: "..."
 ```
+
+## Not Implemented
+- Data Augmentation
+- Gradient Clipping
+- Early Stopping
