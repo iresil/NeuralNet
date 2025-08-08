@@ -9,6 +9,7 @@
 #include <string>
 #include <numeric>
 #include <random>
+#include <chrono>
 #include "NeuralNetwork.cpp"
 #include "../NeuralNet_Data/dataset_mnist.h"
 #include "../NeuralNet_Data/dataloader.h"
@@ -135,6 +136,10 @@ std::string get_model_path(std::string filename = "models/mnist.nn")
 
 void train_new_mnist_model()
 {
+    using namespace std::chrono;
+    std::chrono::zoned_time time_now = zoned_time{ current_zone(), system_clock::now() };
+    std::cout << "[" << time_now << "]" << std::endl;
+
     std::cout << "Loading dataset ..." << std::endl;
     std::string train_data_path = get_model_path("data/train-images-idx3-ubyte");
     std::string train_labels_path = get_model_path("data/train-labels-idx1-ubyte");
@@ -156,8 +161,13 @@ void train_new_mnist_model()
     int n_epochs = 3;
     for (int epoch = 0; epoch < n_epochs; epoch++)
     {
+        time_now = zoned_time{ current_zone(), system_clock::now() };
+        std::cout << std::endl << "[" << time_now << "]" << std::endl;
         std::cout << "[Epoch " << (epoch + 1) << "/" << n_epochs << "] Training ..." << std::endl;
         train(train_dataloader, model, loss_fn, optimizer);
+
+        time_now = zoned_time{ current_zone(), system_clock::now() };
+        std::cout << std::endl << "[" << time_now << "]" << std::endl;
         std::cout << "[Epoch " << (epoch + 1) << "/" << n_epochs << "] Testing ..." << std::endl;
         test(train_dataloader, model, loss_fn);
     }
