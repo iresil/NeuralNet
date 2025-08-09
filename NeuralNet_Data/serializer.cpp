@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include "tensor.h"
+#include "../NeuralNet_Core/tensor.h"
 
 void Serializer::save(const std::unordered_map<std::string, std::shared_ptr<Tensor>> &state_dict,
                       const std::string &filename)

@@ -2,7 +2,6 @@
 #include "dataset.h"
 #include <fstream>
 #include <iostream>
-#include <stdexcept>
 #include "../NeuralNet_Core/tensor.h"
 
 std::vector<int> Dataset::read_mnist_labels(std::string path)

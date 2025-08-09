@@ -24,9 +24,6 @@
     <ClInclude Include="module.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="serializer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="tensor.cpp">
@@ -36,9 +33,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="module.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="serializer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

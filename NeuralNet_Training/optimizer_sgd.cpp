@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "optimizer_sgd.h"
+#include <cstddef>
 #include "../NeuralNet_Core/tensor.h"
 
 SGD::SGD(std::vector<std::pair<std::string, std::shared_ptr<Tensor>>> params, float lr) :

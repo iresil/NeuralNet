@@ -16,7 +16,7 @@
 #include "../NeuralNet_Core/tensor.h"
 #include "../NeuralNet_Training/loss_crossentropy.h"
 #include "../NeuralNet_Training/optimizer_sgd.h"
-#include "../NeuralNet_Core/serializer.h"
+#include "../NeuralNet_Data/serializer.h"
 
 void train(DataLoader &dataloader, NeuralNetwork &model, CrossEntropy &loss_fn, SGD& optimizer)
 {

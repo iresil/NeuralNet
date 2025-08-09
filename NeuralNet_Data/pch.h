@@ -9,8 +9,10 @@
 
 // add headers that you want to pre-compile here
 #include <memory>
+#include <cstddef>
 #include <string>
 #include <vector>
 #include <utility>
+#include <stdexcept>
 
 #endif //PCH_H

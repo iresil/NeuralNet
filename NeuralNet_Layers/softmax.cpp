@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "softmax.h"
+#include <stdexcept>
 #include "../NeuralNet_Core/tensor.h"
 
 std::shared_ptr<Tensor> SoftMax::forward(std::shared_ptr<Tensor> input)
