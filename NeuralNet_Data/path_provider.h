@@ -3,10 +3,10 @@
 
 class PathProvider
 {
-	private:
-		static std::string safe_getenv(const char *name);
-		static bool is_visual_studio();
+    private:
+        static std::string safe_getenv(const char *name);
+        static bool is_visual_studio();
 
-	public:
-		static std::string get_full_path(std::string filename = "models/mnist.nn");
+    public:
+        static std::string get_full_path(std::string filename = "models/mnist.nn");
 };

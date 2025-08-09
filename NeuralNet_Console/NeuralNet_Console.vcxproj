@@ -76,7 +76,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="NeuralNetwork.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NeuralNet_Core\NeuralNet_Core.vcxproj">

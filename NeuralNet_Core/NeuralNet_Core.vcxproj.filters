@@ -24,6 +24,9 @@
     <ClInclude Include="module.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="neural_network.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="tensor.cpp">
@@ -33,6 +36,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="module.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="neural_network.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -7,14 +7,26 @@
 #include <numeric>
 #include <random>
 #include <chrono>
-#include "NeuralNetwork.cpp"
 #include "../NeuralNet_Data/dataset_mnist.h"
 #include "../NeuralNet_Data/dataloader.h"
 #include "../NeuralNet_Core/tensor.h"
+#include "../NeuralNet_Core/neural_network.h"
+#include "../NeuralNet_Layers/layer_factory.h"
 #include "../NeuralNet_Training/loss_crossentropy.h"
 #include "../NeuralNet_Training/optimizer_sgd.h"
 #include "../NeuralNet_Data/serializer.h"
 #include "../NeuralNet_Data/path_provider.h"
+
+const std::vector<NeuralNetwork::LayerSpec> net_config =
+{
+    { "Flatten", {} },
+    { "Linear", { 28 * 28, 512 } },
+    { "Relu", {} },
+    { "Linear", { 512, 512 } },
+    { "Relu", {} },
+    { "Linear", { 512, 10} }
+};
+const auto layer_registry = LayerFactory::make_registry();
 
 void train(DataLoader &dataloader, NeuralNetwork &model, CrossEntropy &loss_fn, SGD& optimizer)
 {
@@ -102,7 +114,7 @@ void train_new_mnist_model()
     DataLoader train_dataloader(&mnist_train, batch_size);
     DataLoader test_dataloader(&mnist_test, batch_size);
 
-    NeuralNetwork model;
+    NeuralNetwork model(layer_registry, net_config);
     CrossEntropy loss_fn;
     float learning_rate = 0.001f;
     SGD optimizer(model.parameters(), learning_rate);
@@ -128,7 +140,7 @@ void train_new_mnist_model()
 
 void inference_on_saved_model()
 {
-    NeuralNetwork model;
+    NeuralNetwork model(layer_registry, net_config);
     std::cout << "Loading model ..." << std::endl;
     std::string path = PathProvider::get_full_path();
     auto loaded_state_dict = Serializer::load(path);
