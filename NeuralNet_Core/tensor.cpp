@@ -1,5 +1,4 @@
 #include "pch.h"
-#include <atomic>
 #include <numeric>
 #include <execution>
 #include "tensor.h"
@@ -277,15 +276,12 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
                 // Because a scalar is added to a vector, the scalar was broadcast during forward pass.
                 // When a scalar is broadcast forward, its gradient must be the sum of all gradients from the broadcasted elements.
                 // The vector receives grad_output directly because it wasn't broadcast.
-                std::atomic<float> grad_self = 0;
-
+                float grad_self = 0;
                 std::size_t count_i = grad_output.size();
-                std::vector<std::size_t> indices(count_i);
-                std::iota(indices.begin(), indices.end(), 0);
-                std::for_each(std::execution::par, indices.begin(), indices.end(), [&](std::size_t i)
+                for (std::size_t i = 0; i < count_i; i++)
                 {
-                    std::atomic_fetch_add(&grad_self, grad_output[i]);
-                });
+                    grad_self += grad_output[i];
+                }
 
                 self->add_to_grad({ grad_self });
                 other->add_to_grad(grad_output);
@@ -322,15 +318,12 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
                 // Because a scalar is added to a vector, the scalar was broadcast during forward pass.
                 // When a scalar is broadcast forward, its gradient must be the sum of all gradients from the broadcasted elements.
                 // The vector receives grad_output directly because it wasn't broadcast.
-                std::atomic<float> grad_self = 0;
+                float grad_self = 0;
                 std::size_t count_i = grad_output.size();
-
-                std::vector<std::size_t> indices(count_i);
-                std::iota(indices.begin(), indices.end(), 0);
-                std::for_each(std::execution::par, indices.begin(), indices.end(), [&](std::size_t i)
+                for (std::size_t i = 0; i < count_i; i++)
                 {
-                    std::atomic_fetch_add(&grad_self, grad_output[i]);
-                });
+                    grad_self += grad_output[i];
+                }
 
                 self->add_to_grad({ grad_self });
                 other->add_to_grad(grad_output);
@@ -359,15 +352,12 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
                 // Because a scalar is added to a vector, the scalar was broadcast during forward pass.
                 // When a scalar is broadcast forward, its gradient must be the sum of all gradients from the broadcasted elements.
                 // The vector receives grad_output directly because it wasn't broadcast.
-                std::atomic<float> grad_other = 0;
+                float grad_other = 0;
                 std::size_t count_i = grad_output.size();
-
-                std::vector<std::size_t> indices(count_i);
-                std::iota(indices.begin(), indices.end(), 0);
-                std::for_each(std::execution::par, indices.begin(), indices.end(), [&](std::size_t i)
+                for (std::size_t i = 0; i < count_i; i++)
                 {
-                    std::atomic_fetch_add(&grad_other, grad_output[i]);
-                });
+                    grad_other += grad_output[i];
+                }
 
                 self->add_to_grad(grad_output);
                 other->add_to_grad({ grad_other });
@@ -404,15 +394,12 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
                 // Because a scalar is added to a vector, the scalar was broadcast during forward pass.
                 // When a scalar is broadcast forward, its gradient must be the sum of all gradients from the broadcasted elements.
                 // The vector receives grad_output directly because it wasn't broadcast.
-                std::atomic<float> grad_other = 0;
+                float grad_other = 0;
                 std::size_t count_i = grad_output.size();
-
-                std::vector<std::size_t> indices(count_i);
-                std::iota(indices.begin(), indices.end(), 0);
-                std::for_each(std::execution::par, indices.begin(), indices.end(), [&](std::size_t i)
+                for (std::size_t i = 0; i < count_i; i++)
                 {
-                    std::atomic_fetch_add(&grad_other, grad_output[i]);
-                });
+                    grad_other += grad_output[i];
+                }
 
                 self->add_to_grad(grad_output);
                 other->add_to_grad({ grad_other });
@@ -508,15 +495,12 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
 
     if (_shape.size() == 1 && other->shape().size() == 1)  // Dot Product: 1D x 1D -> float
     {
-        std::atomic<float> result = 0;
-
+        float result = 0;
         std::size_t count_i = _shape[0];
-        std::vector<std::size_t> indices(count_i);
-        std::iota(indices.begin(), indices.end(), 0);
-        std::for_each(std::execution::par, indices.begin(), indices.end(), [&](std::size_t i)
+        for (std::size_t i = 0; i < count_i; i++)
         {
-            std::atomic_fetch_add(&result, operator()(i) * other->operator()(i));
-        });
+            result += operator()(i) * other->operator()(i);
+        }
         if (_requires_grad || other->requires_grad())
         {
             std::shared_ptr<Tensor> self = shared_from_this();
@@ -550,15 +534,13 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
         std::size_t count_j = _shape[1];
         std::vector<std::size_t> indices_i(count_i);
         std::iota(indices_i.begin(), indices_i.end(), 0);
-        std::vector<std::size_t> indices_j(count_j);
-        std::iota(indices_j.begin(), indices_j.end(), 0);
         std::for_each(std::execution::par, indices_i.begin(), indices_i.end(), [&](std::size_t i)
         {
-            std::atomic<float> result_i = 0;
-            std::for_each(std::execution::par, indices_j.begin(), indices_j.end(), [&](std::size_t j)
+            float result_i = 0;
+            for (std::size_t j = 0; j < count_j; j++)
             {
-                std::atomic_fetch_add(&result_i, operator()(i, j) * other->operator()(j));
-            });
+                result_i += operator()(i, j) * other->operator()(j);
+            }
             result[i] = result_i;
         });
         if (_requires_grad || other->requires_grad())
@@ -589,15 +571,13 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
 
                 std::vector<std::size_t> indices_i_other(count_i_other);
                 std::iota(indices_i_other.begin(), indices_i_other.end(), 0);
-                std::vector<std::size_t> indices_j_other(count_j_other);
-                std::iota(indices_j_other.begin(), indices_j_other.end(), 0);
                 std::for_each(std::execution::par, indices_i_other.begin(), indices_i_other.end(), [&](std::size_t i)
                 {
-                    std::atomic<float> grad_other_i = 0;
-                    std::for_each(std::execution::par, indices_j_other.begin(), indices_j_other.end(), [&](std::size_t j)
+                    float grad_other_i = 0;
+                    for (std::size_t j = 0; j < count_j; j++)
                     {
-                        std::atomic_fetch_add(&grad_other_i, self->operator()(j, i) * grad_output[j]);
-                    });
+                        grad_other_i += self->operator()(j, i) * grad_output[j];
+                    }
                     grad_other[i] = grad_other_i;
                 });
 
@@ -616,15 +596,13 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
 
         std::vector<std::size_t> indices_i(count_i);
         std::iota(indices_i.begin(), indices_i.end(), 0);
-        std::vector<std::size_t> indices_j(count_j);
-        std::iota(indices_j.begin(), indices_j.end(), 0);
         std::for_each(std::execution::par, indices_i.begin(), indices_i.end(), [&](std::size_t i)
         {
-            std::atomic<float> result_i = 0;
-            std::for_each(std::execution::par, indices_j.begin(), indices_j.end(), [&](std::size_t j)
+            float result_i = 0;
+            for (std::size_t j = 0; j < count_j; j++)
             {
-                std::atomic_fetch_add(&result_i, operator()(j) * other->operator()(j, i));
-            });
+                result_i += operator()(j) * other->operator()(j, i);
+            }
             result[i] = result_i;
         });
         if (_requires_grad || other->requires_grad())
@@ -639,15 +617,13 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
 
                 std::vector<std::size_t> indices_i(count_i);
                 std::iota(indices_i.begin(), indices_i.end(), 0);
-                std::vector<std::size_t> indices_j(count_j);
-                std::iota(indices_j.begin(), indices_j.end(), 0);
                 std::for_each(std::execution::par, indices_i.begin(), indices_i.end(), [&](std::size_t i)
                 {
-                    std::atomic<float> grad_self_i = 0;
-                    std::for_each(std::execution::par, indices_j.begin(), indices_j.end(), [&](std::size_t j)
+                    float grad_self_i = 0;
+                    for (std::size_t j = 0; j < count_j; j++)
                     {
-                        std::atomic_fetch_add(&grad_self_i, other->operator()(i, j) * grad_output[j]);
-                    });
+                        grad_self_i += other->operator()(i, j) * grad_output[j];
+                    }
                     grad_self[i] = grad_self_i;
                 });
 
@@ -686,17 +662,15 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
         std::iota(indices_i.begin(), indices_i.end(), 0);
         std::vector<std::size_t> indices_j(count_j);
         std::iota(indices_j.begin(), indices_j.end(), 0);
-        std::vector<std::size_t> indices_k(count_k);
-        std::iota(indices_k.begin(), indices_k.end(), 0);
         std::for_each(std::execution::par, indices_i.begin(), indices_i.end(), [&](std::size_t i)
         {
             std::for_each(std::execution::par, indices_j.begin(), indices_j.end(), [&](std::size_t j)
             {
-                std::atomic<float> result_i_j = 0;
-                std::for_each(std::execution::par, indices_k.begin(), indices_k.end(), [&](std::size_t k)
+                float result_i_j = 0;
+                for (std::size_t k = 0; k < count_k; k++)
                 {
-                    std::atomic_fetch_add(&result_i_j, operator()(i, k) * other->operator()(k, j));
-                });
+                    result_i_j += operator()(i, k) * other->operator()(k, j);
+                }
                 result_i[j] = result_i_j;
             });
             result[i] = result_i;
@@ -717,17 +691,15 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
                 std::iota(indices_i.begin(), indices_i.end(), 0);
                 std::vector<std::size_t> indices_j(count_j);
                 std::iota(indices_j.begin(), indices_j.end(), 0);
-                std::vector<std::size_t> indices_k(count_k);
-                std::iota(indices_k.begin(), indices_k.end(), 0);
                 std::for_each(std::execution::par, indices_i.begin(), indices_i.end(), [&](std::size_t i)
                 {
                     std::for_each(std::execution::par, indices_j.begin(), indices_j.end(), [&](std::size_t j)
                     {
-                        std::atomic<float> grad_self_i_j = 0;
-                        std::for_each(std::execution::par, indices_k.begin(), indices_k.end(), [&](std::size_t k)
+                        float grad_self_i_j = 0;
+                        for (std::size_t k = 0; k < count_k; k++)
                         {
-                            std::atomic_fetch_add(&grad_self_i_j, other->operator()(j, k) * grad_output[i * count_k + k]);
-                        });
+                            grad_self_i_j += other->operator()(j, k) * grad_output[i * count_k + k];
+                        }
                         grad_self[i * count_j + j] = grad_self_i_j;
                     });
                 });
@@ -741,17 +713,15 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
                 std::iota(indices_i_other.begin(), indices_i_other.end(), 0);
                 std::vector<std::size_t> indices_j_other(count_j_other);
                 std::iota(indices_j_other.begin(), indices_j_other.end(), 0);
-                std::vector<std::size_t> indices_k_other(count_k_other);
-                std::iota(indices_k_other.begin(), indices_k_other.end(), 0);
                 std::for_each(std::execution::par, indices_i_other.begin(), indices_i_other.end(), [&](std::size_t i)
                 {
                     std::for_each(std::execution::par, indices_j_other.begin(), indices_j_other.end(), [&](std::size_t j)
                     {
-                        std::atomic<float> grad_other_i_j = 0;
-                        std::for_each(std::execution::par, indices_k_other.begin(), indices_k_other.end(), [&](std::size_t k)
+                        float grad_other_i_j = 0;
+                        for (std::size_t k = 0; k < count_k; k++)
                         {
-                            std::atomic_fetch_add(&grad_other_i_j, self->operator()(k, i) * grad_output[k * count_j_other + j]);
-                        });
+                            grad_other_i_j += self->operator()(k, i) * grad_output[k * count_j_other + j];
+                        }
                         grad_other[i * count_j_other + j] = grad_other_i_j;
                     });
                 });
