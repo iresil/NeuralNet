@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "serializer.h"
-#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include "../NeuralNet_Core/tensor.h"

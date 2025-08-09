@@ -9,6 +9,7 @@
 
 // add headers that you want to pre-compile here
 #include <memory>
+#include <filesystem>
 #include <cstddef>
 #include <string>
 #include <vector>

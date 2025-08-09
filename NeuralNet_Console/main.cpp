@@ -1,11 +1,8 @@
 // main.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
 
-#include <windows.h>
-#include <filesystem>
 #include <iostream>
 #include <iomanip>
-#include <cstdlib>
 #include <string>
 #include <numeric>
 #include <random>
@@ -17,6 +14,7 @@
 #include "../NeuralNet_Training/loss_crossentropy.h"
 #include "../NeuralNet_Training/optimizer_sgd.h"
 #include "../NeuralNet_Data/serializer.h"
+#include "../NeuralNet_Data/path_provider.h"
 
 void train(DataLoader &dataloader, NeuralNetwork &model, CrossEntropy &loss_fn, SGD& optimizer)
 {
@@ -85,55 +83,6 @@ void test(DataLoader &dataloader, NeuralNetwork &model, CrossEntropy &loss_fn)
               << "%\n  avg loss: " << std::setprecision(6) << avg_loss << std::endl;
 }
 
-std::string safe_getenv(const char *name)
-{
-    char *buffer = nullptr;
-    size_t len = 0;
-    if (_dupenv_s(&buffer, &len, name) == 0 && buffer != nullptr)
-    {
-        std::string value(buffer);
-        free(buffer); // Free memory allocated by _dupenv_s
-        return value;
-    }
-    return std::string();
-}
-
-bool is_visual_studio()
-{
-    // Environment Variables set at runtime
-    std::string vs_env = safe_getenv("VSINSTALLDIR");
-    bool is_env_var_present = vs_env.c_str() != nullptr;
-
-    // Might be true for non-VS debuggers, like WinDbg
-    bool is_debugger_present = IsDebuggerPresent();
-
-    return is_env_var_present && is_debugger_present;
-}
-
-std::string get_full_path(std::string filename = "models/mnist.nn")
-{
-    std::filesystem::path folderPath;
-
-    if (is_visual_studio())
-    {
-        folderPath = std::filesystem::path(__FILE__).parent_path().parent_path();
-    }
-    else
-    {
-        char path[MAX_PATH];
-        DWORD length = GetModuleFileNameA(nullptr, path, MAX_PATH);
-        if (length == 0)
-        {
-            return std::string();
-        }
-
-        std::filesystem::path exePath(path);
-        folderPath = exePath.parent_path();
-    }
-    folderPath.append(filename);
-    return folderPath.string();
-}
-
 void train_new_mnist_model()
 {
     using namespace std::chrono;
@@ -141,11 +90,11 @@ void train_new_mnist_model()
     std::cout << "[" << time_now << "]" << std::endl;
 
     std::cout << "Loading dataset ..." << std::endl;
-    std::string train_data_path = get_full_path("data/train-images-idx3-ubyte");
-    std::string train_labels_path = get_full_path("data/train-labels-idx1-ubyte");
+    std::string train_data_path = PathProvider::get_full_path("data/train-images-idx3-ubyte");
+    std::string train_labels_path = PathProvider::get_full_path("data/train-labels-idx1-ubyte");
     MNIST mnist_train = MNIST(train_data_path, train_labels_path);
-    std::string test_data_path = get_full_path("data/t10k-images-idx3-ubyte");
-    std::string test_labels_path = get_full_path("data/t10k-labels-idx1-ubyte");
+    std::string test_data_path = PathProvider::get_full_path("data/t10k-images-idx3-ubyte");
+    std::string test_labels_path = PathProvider::get_full_path("data/t10k-labels-idx1-ubyte");
     MNIST mnist_test = MNIST(test_data_path, test_labels_path);
     std::cout << "Dataset loaded." << std::endl;
 
@@ -173,7 +122,7 @@ void train_new_mnist_model()
     }
 
     auto state_dict = model.state_dict();
-    std::string path = get_full_path();
+    std::string path = PathProvider::get_full_path();
     Serializer::save(state_dict, path);
 }
 
@@ -181,13 +130,13 @@ void inference_on_saved_model()
 {
     NeuralNetwork model;
     std::cout << "Loading model ..." << std::endl;
-    std::string path = get_full_path();
+    std::string path = PathProvider::get_full_path();
     auto loaded_state_dict = Serializer::load(path);
     model.load_state_dict(loaded_state_dict);
 
     std::cout << "Loading test set ..." << std::endl;
-    std::string test_data_path = get_full_path("data/t10k-images-idx3-ubyte");
-    std::string test_labels_path = get_full_path("data/t10k-labels-idx1-ubyte");
+    std::string test_data_path = PathProvider::get_full_path("data/t10k-images-idx3-ubyte");
+    std::string test_labels_path = PathProvider::get_full_path("data/t10k-labels-idx1-ubyte");
     MNIST mnist_test = MNIST(test_data_path, test_labels_path);
 
     int n_samples = 10;
