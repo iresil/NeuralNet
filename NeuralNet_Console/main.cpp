@@ -110,7 +110,7 @@ bool is_visual_studio()
     return is_env_var_present && is_debugger_present;
 }
 
-std::string get_model_path(std::string filename = "models/mnist.nn")
+std::string get_full_path(std::string filename = "models/mnist.nn")
 {
     std::filesystem::path folderPath;
 
@@ -141,11 +141,11 @@ void train_new_mnist_model()
     std::cout << "[" << time_now << "]" << std::endl;
 
     std::cout << "Loading dataset ..." << std::endl;
-    std::string train_data_path = get_model_path("data/train-images-idx3-ubyte");
-    std::string train_labels_path = get_model_path("data/train-labels-idx1-ubyte");
+    std::string train_data_path = get_full_path("data/train-images-idx3-ubyte");
+    std::string train_labels_path = get_full_path("data/train-labels-idx1-ubyte");
     MNIST mnist_train = MNIST(train_data_path, train_labels_path);
-    std::string test_data_path = get_model_path("data/t10k-images-idx3-ubyte");
-    std::string test_labels_path = get_model_path("data/t10k-labels-idx1-ubyte");
+    std::string test_data_path = get_full_path("data/t10k-images-idx3-ubyte");
+    std::string test_labels_path = get_full_path("data/t10k-labels-idx1-ubyte");
     MNIST mnist_test = MNIST(test_data_path, test_labels_path);
     std::cout << "Dataset loaded." << std::endl;
 
@@ -173,7 +173,7 @@ void train_new_mnist_model()
     }
 
     auto state_dict = model.state_dict();
-    std::string path = get_model_path();
+    std::string path = get_full_path();
     Serializer::save(state_dict, path);
 }
 
@@ -181,13 +181,13 @@ void inference_on_saved_model()
 {
     NeuralNetwork model;
     std::cout << "Loading model ..." << std::endl;
-    std::string path = get_model_path();
+    std::string path = get_full_path();
     auto loaded_state_dict = Serializer::load(path);
     model.load_state_dict(loaded_state_dict);
 
     std::cout << "Loading test set ..." << std::endl;
-    std::string test_data_path = get_model_path("data/t10k-images-idx3-ubyte");
-    std::string test_labels_path = get_model_path("data/t10k-labels-idx1-ubyte");
+    std::string test_data_path = get_full_path("data/t10k-images-idx3-ubyte");
+    std::string test_labels_path = get_full_path("data/t10k-labels-idx1-ubyte");
     MNIST mnist_test = MNIST(test_data_path, test_labels_path);
 
     int n_samples = 10;
