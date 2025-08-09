@@ -79,6 +79,9 @@
     <ProjectReference Include="..\NeuralNet_Core\NeuralNet_Core.vcxproj">
       <Project>{1e73124f-88ea-4125-9408-e5168fcafee1}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\NeuralNet_Data\NeuralNet_Data.vcxproj">
+      <Project>{d94e9831-e0d9-4883-b90e-f67c26d5cf9f}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\NeuralNet_Layers\NeuralNet_Layers.vcxproj">
       <Project>{d7ecdefd-efed-4134-9353-0d9738757f9b}</Project>
     </ProjectReference>
