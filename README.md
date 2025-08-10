@@ -25,6 +25,7 @@ Some of these changes are:
     - Improved component separation by splitting the code into multiple projects.
     - Clarified external API by reevaluating which includes should be added in `.h` files and which should be added in `.cpp` files.
     - Decreased coupling between classes by using forward declarations (e.g. `class Tensor;`) where includes where unnecessary.
+    - Parameterized the NeuralNetwork class so that it doesn't need to be redefined every time it's used.
 - **Performance**
     - Optimized compile times by using forward declarations (e.g. `class Tensor;`) where includes where unnecessary.
     - Optimized compile times by precompiling libraries that are used across multiple classes, or are particularly heavy.
