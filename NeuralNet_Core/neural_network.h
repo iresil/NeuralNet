@@ -3,6 +3,7 @@ class Tensor;
 #include <functional>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 #include <any>
 #include "module.h"

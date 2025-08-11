@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "loss_nll.h"
-#include <functional>
 #include <algorithm>
 #include <cmath>
 #include "../NeuralNet_Core/tensor.h"

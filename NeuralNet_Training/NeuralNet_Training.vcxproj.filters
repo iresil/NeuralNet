@@ -30,6 +30,9 @@
     <ClInclude Include="optimizer_sgd.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="model_engine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -45,6 +48,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="optimizer_sgd.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="model_engine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -83,6 +83,7 @@
     <ClInclude Include="loss_crossentropy.h" />
     <ClInclude Include="loss.h" />
     <ClInclude Include="loss_nll.h" />
+    <ClInclude Include="model_engine.h" />
     <ClInclude Include="optimizer_sgd.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
@@ -90,6 +91,7 @@
     <ClCompile Include="loss.cpp" />
     <ClCompile Include="loss_crossentropy.cpp" />
     <ClCompile Include="loss_nll.cpp" />
+    <ClCompile Include="model_engine.cpp" />
     <ClCompile Include="optimizer_sgd.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -99,6 +101,9 @@
   <ItemGroup>
     <ProjectReference Include="..\NeuralNet_Core\NeuralNet_Core.vcxproj">
       <Project>{1e73124f-88ea-4125-9408-e5168fcafee1}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\NeuralNet_Data\NeuralNet_Data.vcxproj">
+      <Project>{d94e9831-e0d9-4883-b90e-f67c26d5cf9f}</Project>
     </ProjectReference>
     <ProjectReference Include="..\NeuralNet_Layers\NeuralNet_Layers.vcxproj">
       <Project>{d7ecdefd-efed-4134-9353-0d9738757f9b}</Project>
