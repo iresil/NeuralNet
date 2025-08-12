@@ -5,6 +5,12 @@
 #include "../NeuralNet_Layers/layer_factory.h"
 #include "../NeuralNet_Training/model_engine.h"
 
+const std::string train_data_path = "data/train-images-idx3-ubyte";
+const std::string train_labels_path = "data/train-labels-idx1-ubyte";
+const std::string test_data_path = "data/t10k-images-idx3-ubyte";
+const std::string test_labels_path = "data/t10k-labels-idx1-ubyte";
+
+const auto layer_registry = LayerFactory::make_registry();
 const std::vector<NeuralNetwork::LayerSpec> net_config =
 {
     { "Flatten", {} },
@@ -14,12 +20,11 @@ const std::vector<NeuralNetwork::LayerSpec> net_config =
     { "Relu", {} },
     { "Linear", { 512, 10} }
 };
-const auto layer_registry = LayerFactory::make_registry();
 
 int main()
 {
-    ModelEngine::train_new_mnist_model(layer_registry, net_config);
-    //ModelEngine::inference_on_saved_model(layer_registry, net_config);
+    ModelEngine::train_new_model(train_data_path, train_labels_path, test_data_path, test_labels_path, layer_registry, net_config, 10, 3, 0.001f);
+    //ModelEngine::inference_on_saved_model(test_data_path, test_labels_path, layer_registry, net_config, 10);
 
     return 0;
 }

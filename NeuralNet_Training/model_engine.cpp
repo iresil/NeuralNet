@@ -82,32 +82,30 @@ void ModelEngine::test(DataLoader &dataloader, NeuralNetwork &model, CrossEntrop
         << "%\n  avg loss: " << std::setprecision(6) << avg_loss << std::endl;
 }
 
-void ModelEngine::train_new_mnist_model(const std::unordered_map<std::string, std::function<std::shared_ptr<Module>(std::vector<std::any>)>> &layer_registry,
-                                        const std::vector<NeuralNetwork::LayerSpec> &layer_specs)
+void ModelEngine::train_new_model(std::string train_data_path, std::string train_labels_path, std::string test_data_path, std::string test_labels_path,
+                                  const std::unordered_map<std::string, std::function<std::shared_ptr<Module>(std::vector<std::any>)>> &layer_registry,
+                                  const std::vector<NeuralNetwork::LayerSpec> &layer_specs, int batch_size, int n_epochs, float learning_rate)
 {
     using namespace std::chrono;
     std::chrono::zoned_time time_now = zoned_time{ current_zone(), system_clock::now() };
     std::cout << "[" << time_now << "]" << std::endl;
 
     std::cout << "Loading dataset ..." << std::endl;
-    std::string train_data_path = PathProvider::get_full_path("data/train-images-idx3-ubyte");
-    std::string train_labels_path = PathProvider::get_full_path("data/train-labels-idx1-ubyte");
+    train_data_path = PathProvider::get_full_path(train_data_path);
+    train_labels_path = PathProvider::get_full_path(train_labels_path);
     MNIST mnist_train = MNIST(train_data_path, train_labels_path);
-    std::string test_data_path = PathProvider::get_full_path("data/t10k-images-idx3-ubyte");
-    std::string test_labels_path = PathProvider::get_full_path("data/t10k-labels-idx1-ubyte");
+    test_data_path = PathProvider::get_full_path(test_data_path);
+    test_labels_path = PathProvider::get_full_path(test_labels_path);
     MNIST mnist_test = MNIST(test_data_path, test_labels_path);
     std::cout << "Dataset loaded." << std::endl;
 
-    int batch_size = 10;
     DataLoader train_dataloader(&mnist_train, batch_size);
     DataLoader test_dataloader(&mnist_test, batch_size);
 
     NeuralNetwork model(layer_registry, layer_specs);
     CrossEntropy loss_fn;
-    float learning_rate = 0.001f;
     SGD optimizer(model.parameters(), learning_rate);
 
-    int n_epochs = 3;
     for (int epoch = 0; epoch < n_epochs; epoch++)
     {
         time_now = zoned_time{ current_zone(), system_clock::now() };
@@ -126,8 +124,9 @@ void ModelEngine::train_new_mnist_model(const std::unordered_map<std::string, st
     Serializer::save(state_dict, path);
 }
 
-void ModelEngine::inference_on_saved_model(const std::unordered_map<std::string, std::function<std::shared_ptr<Module>(std::vector<std::any>)>> &layer_registry,
-                                           const std::vector<NeuralNetwork::LayerSpec> &layer_specs)
+void ModelEngine::inference_on_saved_model(std::string test_data_path, std::string test_labels_path,
+                                           const std::unordered_map<std::string, std::function<std::shared_ptr<Module>(std::vector<std::any>)>> &layer_registry,
+                                           const std::vector<NeuralNetwork::LayerSpec> &layer_specs, int n_samples)
 {
     NeuralNetwork model(layer_registry, layer_specs);
     std::cout << "Loading model ..." << std::endl;
@@ -136,11 +135,10 @@ void ModelEngine::inference_on_saved_model(const std::unordered_map<std::string,
     model.load_state_dict(loaded_state_dict);
 
     std::cout << "Loading test set ..." << std::endl;
-    std::string test_data_path = PathProvider::get_full_path("data/t10k-images-idx3-ubyte");
-    std::string test_labels_path = PathProvider::get_full_path("data/t10k-labels-idx1-ubyte");
+    test_data_path = PathProvider::get_full_path(test_data_path);
+    test_labels_path = PathProvider::get_full_path(test_labels_path);
     MNIST mnist_test = MNIST(test_data_path, test_labels_path);
 
-    int n_samples = 10;
     std::vector<int> all_indices(mnist_test.get_length());
     std::iota(all_indices.begin(), all_indices.end(), 0);
     std::random_device rd;
