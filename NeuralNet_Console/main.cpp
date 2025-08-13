@@ -1,14 +1,40 @@
 // main.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
 
+#include <map>
+#include <string>
 #include "../NeuralNet_Core/neural_network.h"
 #include "../NeuralNet_Layers/layer_factory.h"
 #include "../NeuralNet_Training/model_engine.h"
 
-const std::string train_data_path = "data/train-images-idx3-ubyte";
-const std::string train_labels_path = "data/train-labels-idx1-ubyte";
-const std::string test_data_path = "data/t10k-images-idx3-ubyte";
-const std::string test_labels_path = "data/t10k-labels-idx1-ubyte";
+
+enum Mode
+{
+    TRAINING,
+    INFERENCE
+};
+
+enum InputData
+{
+    MNIST,
+    FASHION_MNIST
+};
+
+const Mode selected_mode = Mode::TRAINING;
+const InputData selected_dataset = InputData::MNIST;
+
+const std::map<InputData, std::map<std::string, std::string>> datasets =
+{
+    {
+        InputData::MNIST,
+        {
+            { "train_data_path", "data/train-images-idx3-ubyte" },
+            { "train_labels_path", "data/train-labels-idx1-ubyte" },
+            { "test_data_path", "data/t10k-images-idx3-ubyte" },
+            { "test_labels_path", "data/t10k-labels-idx1-ubyte" }
+        }
+    }
+};
 
 const auto layer_registry = LayerFactory::make_registry();
 const std::vector<NeuralNetwork::LayerSpec> net_config =
@@ -20,11 +46,26 @@ const std::vector<NeuralNetwork::LayerSpec> net_config =
     { "Relu", {} },
     { "Linear", { 512, 10} }
 };
+const int train_batch_size = 10;
+const int train_epochs = 3;
+const float learning_rate = 0.001f;
+const int infer_samples = 10;
 
 int main()
 {
-    ModelEngine::train_new_model(train_data_path, train_labels_path, test_data_path, test_labels_path, layer_registry, net_config, 10, 3, 0.001f);
-    //ModelEngine::inference_on_saved_model(test_data_path, test_labels_path, layer_registry, net_config, 10);
+    std::string train_data_path = datasets.at(selected_dataset).at("train_data_path");
+    std::string train_labels_path = datasets.at(selected_dataset).at("train_labels_path");
+    std::string test_data_path = datasets.at(selected_dataset).at("test_data_path");
+    std::string test_labels_path = datasets.at(selected_dataset).at("test_labels_path");
+
+    if (selected_mode == Mode::TRAINING)
+    {
+        ModelEngine::train_new_model(train_data_path, train_labels_path, test_data_path, test_labels_path, layer_registry, net_config, train_batch_size, train_epochs, learning_rate);
+    }
+    else
+    {
+        ModelEngine::inference_on_saved_model(test_data_path, test_labels_path, layer_registry, net_config, infer_samples);
+    }
 
     return 0;
 }
