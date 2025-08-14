@@ -25,7 +25,7 @@ namespace TensorTests
 
     TEST(Creation, 2D)
     {
-        std::vector<std::vector<float>> v_2 = { {1.0, 2.0, 3.0}, {4.0, 5.0, 6.0} };
+        std::vector<std::vector<float>> v_2 = { { 1.0, 2.0, 3.0 }, { 4.0, 5.0, 6.0 } };
         Tensor tensor = Tensor(v_2);
         EXPECT_EQ(tensor.shape(), std::vector<std::size_t>({ 2, 3 }));
         EXPECT_EQ(tensor.stride(), std::vector<std::size_t>({ 3, 1 }));

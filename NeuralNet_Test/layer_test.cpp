@@ -18,7 +18,7 @@ namespace LayerTests
 
     TEST(Flatten, 1D)
     {
-        std::shared_ptr<Tensor> c = std::make_shared<Tensor>(std::vector<float>{1.0, 2.0, 3.0});
+        std::shared_ptr<Tensor> c = std::make_shared<Tensor>(std::vector<float>{ 1.0, 2.0, 3.0 });
         std::shared_ptr<Flatten> flatten = std::make_shared<Flatten>();
         std::shared_ptr<Tensor> d = (*flatten)(c);
         EXPECT_EQ(d->shape(), std::vector<std::size_t>({ 3 }));
@@ -29,7 +29,7 @@ namespace LayerTests
 
     TEST(Flatten, 2D)
     {
-        std::shared_ptr<Tensor> e = std::make_shared<Tensor>(std::vector<std::vector<float>>{{1.0, 2.0, 3.0}, { 4.0, 5.0, 6.0 }});
+        std::shared_ptr<Tensor> e = std::make_shared<Tensor>(std::vector<std::vector<float>>{ { 1.0, 2.0, 3.0 }, { 4.0, 5.0, 6.0 } });
         std::shared_ptr<Flatten> flatten = std::make_shared<Flatten>();
         std::shared_ptr<Tensor> f = (*flatten)(e);
         EXPECT_EQ(f->shape(), std::vector<std::size_t>({ 6 }));
@@ -43,7 +43,7 @@ namespace LayerTests
 
     TEST(Linear, Transform)
     {
-        std::shared_ptr<Tensor> a = std::make_shared<Tensor>(std::vector<float>{1.0, 2.0, 3.0});
+        std::shared_ptr<Tensor> a = std::make_shared<Tensor>(std::vector<float>{ 1.0, 2.0, 3.0 });
         Linear linear(3, 2, 7);
         std::shared_ptr<Tensor> b = linear(a);
         EXPECT_EQ(b->shape(), std::vector<std::size_t>({ 2 }));
@@ -53,7 +53,7 @@ namespace LayerTests
 
     TEST(ReLU, Positive_Input)
     {
-        std::shared_ptr<Tensor> a = std::make_shared<Tensor>(std::vector<float>{1.0, 2.0, 3.0});
+        std::shared_ptr<Tensor> a = std::make_shared<Tensor>(std::vector<float>{ 1.0, 2.0, 3.0 });
         Relu relu;
         std::shared_ptr<Tensor> b = relu(a);
         EXPECT_EQ(b->shape(), std::vector<std::size_t>({ 3 }));
@@ -64,7 +64,7 @@ namespace LayerTests
 
     TEST(ReLU, Negative_Input)
     {
-        std::shared_ptr<Tensor> c = std::make_shared<Tensor>(std::vector<float>{-1.0, -2.0, -3.0});
+        std::shared_ptr<Tensor> c = std::make_shared<Tensor>(std::vector<float>{ -1.0, -2.0, -3.0 });
         Relu relu;
         std::shared_ptr<Tensor> d = relu(c);
         EXPECT_EQ(d->shape(), std::vector<std::size_t>({ 3 }));
@@ -75,7 +75,7 @@ namespace LayerTests
 
     TEST(Softmax, Transform)
     {
-        std::shared_ptr<Tensor> a = std::make_shared<Tensor>(std::vector<float>{1.0, 2.0, 3.0});
+        std::shared_ptr<Tensor> a = std::make_shared<Tensor>(std::vector<float>{ 1.0, 2.0, 3.0 });
         SoftMax softmax;
         std::shared_ptr<Tensor> b = softmax(a);
         EXPECT_EQ(b->shape(), std::vector<std::size_t>({ 3 }));
