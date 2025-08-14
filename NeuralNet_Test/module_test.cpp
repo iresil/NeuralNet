@@ -11,7 +11,7 @@
 
 namespace ModuleTests
 {
-    TEST(Creation, Linear_Simple)
+    TEST(Creation, Linear_Simple_Parameters)
     {
         Linear linear(3, 2, 42);
         auto params = linear.parameters();
@@ -20,32 +20,7 @@ namespace ModuleTests
         EXPECT_EQ(params[1].first, "bias");
     }
 
-    TEST(Creation, NeuralNetwork_Randomized)
-    {
-        const std::vector<NeuralNetwork::LayerSpec> config =
-        {
-            { "Flatten", {} },
-            { "Linear", { 28 * 28, 512 } },
-            { "Relu", {} },
-            { "Linear", { 512, 512 } },
-            { "Relu", {} },
-            { "Linear", { 512, 10 } }
-        };
-        const auto registry = LayerFactory::make_registry();
-        NeuralNetwork network(registry, config);
-
-        auto params = network.parameters();
-        
-        EXPECT_EQ(params.size(), 6);
-        EXPECT_EQ(params[0].first, "linear_1.weight");
-        EXPECT_EQ(params[1].first, "linear_1.bias");
-        EXPECT_EQ(params[2].first, "linear_2.weight");
-        EXPECT_EQ(params[3].first, "linear_2.bias");
-        EXPECT_EQ(params[4].first, "linear_3.weight");
-        EXPECT_EQ(params[5].first, "linear_3.bias");
-    }
-
-    TEST(Serialization, NeuralNetwork_Seeded)
+    TEST(Serialization, NeuralNetwork_Seeded_Parameters)
     {
         const std::vector<NeuralNetwork::LayerSpec> config =
         {
@@ -86,5 +61,30 @@ namespace ModuleTests
 
         // Delete state_dict file
         std::remove(path.c_str());
+    }
+
+    TEST(Creation, NeuralNetwork_Randomized)
+    {
+        const std::vector<NeuralNetwork::LayerSpec> config =
+        {
+            { "Flatten", {} },
+            { "Linear", { 28 * 28, 512 } },
+            { "Relu", {} },
+            { "Linear", { 512, 512 } },
+            { "Relu", {} },
+            { "Linear", { 512, 10 } }
+        };
+        const auto registry = LayerFactory::make_registry();
+        NeuralNetwork network(registry, config);
+
+        auto params = network.parameters();
+
+        EXPECT_EQ(params.size(), 6);
+        EXPECT_EQ(params[0].first, "linear_1.weight");
+        EXPECT_EQ(params[1].first, "linear_1.bias");
+        EXPECT_EQ(params[2].first, "linear_2.weight");
+        EXPECT_EQ(params[3].first, "linear_2.bias");
+        EXPECT_EQ(params[4].first, "linear_3.weight");
+        EXPECT_EQ(params[5].first, "linear_3.bias");
     }
 }
