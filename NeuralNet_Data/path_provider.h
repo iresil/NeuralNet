@@ -8,5 +8,5 @@ class PathProvider
         static bool is_visual_studio();
 
     public:
-        static std::string get_full_path(std::string filename = "models/mnist.nn");
+        static std::string get_full_path(std::string filename);
 };

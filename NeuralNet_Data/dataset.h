@@ -12,6 +12,7 @@ class Dataset
         float convert_to_float(unsigned char px);
 
     public:
+        virtual ~Dataset() = default;
         virtual std::pair<int, std::shared_ptr<Tensor>> get_item(int index) = 0;
         virtual int get_length() = 0;
         std::vector<int> read_mnist_labels(std::string path);

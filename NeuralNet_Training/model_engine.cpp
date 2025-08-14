@@ -5,7 +5,9 @@
 #include <numeric>
 #include <random>
 #include <chrono>
+#include "../NeuralNet_Data/dataset.h"
 #include "../NeuralNet_Data/dataset_mnist.h"
+#include "../NeuralNet_Data/dataset_fashionmnist.h"
 #include "../NeuralNet_Data/dataloader.h"
 #include "../NeuralNet_Core/tensor.h"
 #include "../NeuralNet_Core/neural_network.h"
@@ -82,9 +84,9 @@ void ModelEngine::test(DataLoader &dataloader, NeuralNetwork &model, CrossEntrop
         << "%\n  avg loss: " << std::setprecision(6) << avg_loss << std::endl;
 }
 
-void ModelEngine::train_new_model(std::string train_data_path, std::string train_labels_path, std::string test_data_path, std::string test_labels_path,
+void ModelEngine::train_new_model(InputData selected_dataset, std::string train_data_path, std::string train_labels_path, std::string test_data_path, std::string test_labels_path,
                                   const std::unordered_map<std::string, std::function<std::shared_ptr<Module>(std::vector<std::any>)>> &layer_registry,
-                                  const std::vector<NeuralNetwork::LayerSpec> &layer_specs, int batch_size, int n_epochs, float learning_rate)
+                                  const std::vector<NeuralNetwork::LayerSpec> &layer_specs, int batch_size, int n_epochs, float learning_rate, std::string model_path)
 {
     using namespace std::chrono;
     std::chrono::zoned_time time_now = zoned_time{ current_zone(), system_clock::now() };
@@ -93,14 +95,30 @@ void ModelEngine::train_new_model(std::string train_data_path, std::string train
     std::cout << "Loading dataset ..." << std::endl;
     train_data_path = PathProvider::get_full_path(train_data_path);
     train_labels_path = PathProvider::get_full_path(train_labels_path);
-    MNIST mnist_train = MNIST(train_data_path, train_labels_path);
+    std::shared_ptr<Dataset> mnist_train;
+    if (selected_dataset == InputData::FASHION_MNIST)
+    {
+        mnist_train = std::make_shared<FashionMNIST>(train_data_path, train_labels_path);
+    }
+    else
+    {
+        mnist_train = std::make_shared<MNIST>(train_data_path, train_labels_path);
+    }
     test_data_path = PathProvider::get_full_path(test_data_path);
     test_labels_path = PathProvider::get_full_path(test_labels_path);
-    MNIST mnist_test = MNIST(test_data_path, test_labels_path);
+    std::shared_ptr<Dataset> mnist_test;
+    if (selected_dataset == InputData::FASHION_MNIST)
+    {
+        mnist_test = std::make_shared<FashionMNIST>(test_data_path, test_labels_path);
+    }
+    else
+    {
+        mnist_test = std::make_shared<MNIST>(test_data_path, test_labels_path);
+    }
     std::cout << "Dataset loaded." << std::endl;
 
-    DataLoader train_dataloader(&mnist_train, batch_size);
-    DataLoader test_dataloader(&mnist_test, batch_size);
+    DataLoader train_dataloader(mnist_train.get(), batch_size);
+    DataLoader test_dataloader(mnist_test.get(), batch_size);
 
     NeuralNetwork model(layer_registry, layer_specs);
     CrossEntropy loss_fn;
@@ -120,26 +138,34 @@ void ModelEngine::train_new_model(std::string train_data_path, std::string train
     }
 
     auto state_dict = model.state_dict();
-    std::string path = PathProvider::get_full_path();
+    std::string path = PathProvider::get_full_path(model_path);
     Serializer::save(state_dict, path);
 }
 
-void ModelEngine::inference_on_saved_model(std::string test_data_path, std::string test_labels_path,
+void ModelEngine::inference_on_saved_model(InputData selected_dataset, std::string test_data_path, std::string test_labels_path,
                                            const std::unordered_map<std::string, std::function<std::shared_ptr<Module>(std::vector<std::any>)>> &layer_registry,
-                                           const std::vector<NeuralNetwork::LayerSpec> &layer_specs, int n_samples)
+                                           const std::vector<NeuralNetwork::LayerSpec> &layer_specs, int n_samples, std::string model_path)
 {
     NeuralNetwork model(layer_registry, layer_specs);
     std::cout << "Loading model ..." << std::endl;
-    std::string path = PathProvider::get_full_path();
+    std::string path = PathProvider::get_full_path(model_path);
     auto loaded_state_dict = Serializer::load(path);
     model.load_state_dict(loaded_state_dict);
 
     std::cout << "Loading test set ..." << std::endl;
     test_data_path = PathProvider::get_full_path(test_data_path);
     test_labels_path = PathProvider::get_full_path(test_labels_path);
-    MNIST mnist_test = MNIST(test_data_path, test_labels_path);
+    std::shared_ptr<Dataset> mnist_test;
+    if (selected_dataset == InputData::FASHION_MNIST)
+    {
+        mnist_test = std::make_shared<FashionMNIST>(test_data_path, test_labels_path);
+    }
+    else
+    {
+        mnist_test = std::make_shared<MNIST>(test_data_path, test_labels_path);
+    }
 
-    std::vector<int> all_indices(mnist_test.get_length());
+    std::vector<int> all_indices(mnist_test->get_length());
     std::iota(all_indices.begin(), all_indices.end(), 0);
     std::random_device rd;
     std::mt19937 g(rd());
@@ -149,12 +175,24 @@ void ModelEngine::inference_on_saved_model(std::string test_data_path, std::stri
     for (int i = 0; i < n_samples; i++)
     {
         std::cout << "Sample " << i << " of " << n_samples << std::endl;
-        std::pair<int, std::shared_ptr<Tensor>> sample_image = mnist_test.get_item(indices[i]);
+        std::pair<int, std::shared_ptr<Tensor>> sample_image = mnist_test->get_item(indices[i]);
         Dataset::visualize_image(sample_image.second);
         auto output = model(sample_image.second);
         int predicted_class = output->argmax();
-        std::cout << "Predicted Class: " << mnist_test.label_to_class(predicted_class) << std::endl;
-        std::cout << "Actual Class: " << mnist_test.label_to_class(sample_image.first) << std::endl;
+        std::string predicted_name;
+        std::string actual_name;
+        if (selected_dataset == InputData::FASHION_MNIST)
+        {
+            predicted_name = std::dynamic_pointer_cast<FashionMNIST>(mnist_test)->label_to_class(predicted_class);
+            actual_name = std::dynamic_pointer_cast<FashionMNIST>(mnist_test)->label_to_class(sample_image.first);
+        }
+        else
+        {
+            predicted_name = std::dynamic_pointer_cast<MNIST>(mnist_test)->label_to_class(predicted_class);
+            actual_name = std::dynamic_pointer_cast<MNIST>(mnist_test)->label_to_class(sample_image.first);
+        }
+        std::cout << "Predicted Class: " << predicted_name << std::endl;
+        std::cout << "Actual Class: " << actual_name << std::endl;
         std::cout << "=======================================" << std::endl;
     }
 }

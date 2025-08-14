@@ -84,6 +84,7 @@
     <ClInclude Include="dataset.h" />
     <ClInclude Include="dataset_fashionmnist.h" />
     <ClInclude Include="dataset_mnist.h" />
+    <ClInclude Include="input_data.h" />
     <ClInclude Include="path_provider.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="serializer.h" />

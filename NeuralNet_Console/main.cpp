@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 #include "../NeuralNet_Core/neural_network.h"
+#include "../NeuralNet_Data/input_data.h"
 #include "../NeuralNet_Layers/layer_factory.h"
 #include "../NeuralNet_Training/model_engine.h"
 
@@ -14,12 +15,6 @@ enum Mode
     INFERENCE
 };
 
-enum InputData
-{
-    MNIST,
-    FASHION_MNIST
-};
-
 const Mode selected_mode = Mode::TRAINING;
 const InputData selected_dataset = InputData::MNIST;
 
@@ -28,10 +23,21 @@ const std::map<InputData, std::map<std::string, std::string>> datasets =
     {
         InputData::MNIST,
         {
-            { "train_data_path", "data/train-images-idx3-ubyte" },
-            { "train_labels_path", "data/train-labels-idx1-ubyte" },
-            { "test_data_path", "data/t10k-images-idx3-ubyte" },
-            { "test_labels_path", "data/t10k-labels-idx1-ubyte" }
+            { "train_data_path", "data/mnist/train-images-idx3-ubyte" },
+            { "train_labels_path", "data/mnist/train-labels-idx1-ubyte" },
+            { "test_data_path", "data/mnist/t10k-images-idx3-ubyte" },
+            { "test_labels_path", "data/mnist/t10k-labels-idx1-ubyte" },
+            { "model_path", "models/mnist.nn" }
+        }
+    },
+    {
+        InputData::FASHION_MNIST,
+        {
+            { "train_data_path", "data/fashion-mnist/train-images-idx3-ubyte" },
+            { "train_labels_path", "data/fashion-mnist/train-labels-idx1-ubyte" },
+            { "test_data_path", "data/fashion-mnist/t10k-images-idx3-ubyte" },
+            { "test_labels_path", "data/fashion-mnist/t10k-labels-idx1-ubyte" },
+            { "model_path", "models/fashion-mnist.nn" }
         }
     }
 };
@@ -57,14 +63,15 @@ int main()
     std::string train_labels_path = datasets.at(selected_dataset).at("train_labels_path");
     std::string test_data_path = datasets.at(selected_dataset).at("test_data_path");
     std::string test_labels_path = datasets.at(selected_dataset).at("test_labels_path");
+    std::string model_path = datasets.at(selected_dataset).at("model_path");
 
     if (selected_mode == Mode::TRAINING)
     {
-        ModelEngine::train_new_model(train_data_path, train_labels_path, test_data_path, test_labels_path, layer_registry, net_config, train_batch_size, train_epochs, learning_rate);
+        ModelEngine::train_new_model(selected_dataset, train_data_path, train_labels_path, test_data_path, test_labels_path, layer_registry, net_config, train_batch_size, train_epochs, learning_rate, model_path);
     }
     else
     {
-        ModelEngine::inference_on_saved_model(test_data_path, test_labels_path, layer_registry, net_config, infer_samples);
+        ModelEngine::inference_on_saved_model(selected_dataset, test_data_path, test_labels_path, layer_registry, net_config, infer_samples, model_path);
     }
 
     return 0;
