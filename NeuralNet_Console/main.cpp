@@ -16,7 +16,7 @@ enum Mode
 };
 
 const Mode selected_mode = Mode::TRAINING;
-const InputData selected_dataset = InputData::MNIST;
+const InputData selected_dataset = InputData::FASHION_MNIST;
 
 const std::map<InputData, std::map<std::string, std::string>> datasets =
 {
@@ -53,7 +53,7 @@ const std::vector<NeuralNetwork::LayerSpec> net_config =
     { "Linear", { 512, 10} }
 };
 const int train_batch_size = 10;
-const int train_epochs = 3;
+const int train_epochs = 6;
 const float learning_rate = 0.001f;
 const int infer_samples = 10;
 
