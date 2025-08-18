@@ -65,6 +65,7 @@
     <ClCompile Include="layer_test.cpp" />
     <ClCompile Include="loss_test.cpp" />
     <ClCompile Include="module_test.cpp" />
+    <ClCompile Include="optimizer_test.cpp" />
     <ClCompile Include="tensor_backward_test.cpp" />
     <ClCompile Include="tensor_forward_test.cpp" />
     <ClCompile Include="tensor_test.cpp" />
