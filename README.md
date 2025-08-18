@@ -7,7 +7,7 @@
 > More on that below.
 
 ## About
-NeuralNet is a **C++ 17** project that utilizes the [Standard Library](https://en.cppreference.com/w/cpp/standard_library.html)
+NeuralNet is a **C++ 20** project that utilizes the [Standard Library](https://en.cppreference.com/w/cpp/standard_library.html)
 and was mainly built for fun, as well as to get a more in-depth understanding of the internals of a neural network.
 
 While following the video series based on which the project was built, further research on each one of its building blocks was done separately.
@@ -43,11 +43,10 @@ Some of these changes are:
 ## Code Structure
 The solution can be built using **Visual Studio 2022** and it contains 6 different projects:
 - **NeuralNet_Console**: This is the base project that contains the entry point of the application.
-  It also contains the definition of a simple neural network that includes three linear layers and an activation layer
-  (as defined in the rest of the code), as well as methods to encapsulate training the model and making inferences.
 - **NeuralNet_Core**: C++ static library that contains the definitions of `Tensor` (the core data structure used for
-  representing inputs, outputs, model parameters and intermediate computations) and `Module` (a reusable, encapsulated
-  building block that represents the model's various components).
+  representing inputs, outputs, model parameters and intermediate computations), `Module` (a reusable, encapsulated
+  building block that represents the model's various components) and `NeuralNetwork` (a generic implementation of a neural network,
+  whose structure can be parameterized upon creation).
 - **NeuralNet_Layers**: C++ static library that contains the classes that will be used as the neural network's main building blocks.
 - **NeuralNet_Training**: C++ static library that contains classes that implement learning logic and optimization utilities.
 - **NeuralNet_Data**: C++ static library that contains everything related to saving and loading both input and output data.
