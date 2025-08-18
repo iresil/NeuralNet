@@ -228,6 +228,11 @@ packet-beta
 ```
 
 ## Not Implemented
-- Data Augmentation
-- Gradient Clipping
-- Early Stopping
+- **Data Augmentation**: The training data is not transformed in any way. Images are not rotated, flipped or scaled.
+  This would help the trained model generalize better and not overfit, but image processing is a domain on its own,
+  and can be decoupled completely from this project.
+- **Gradient Clipping**: The magnitude of gradients during backpropagation is not constrained in any way. This is
+  because our neural network is neither recurrent (i.e. the order of inputs doesn't matter), nor very deep, so
+  exploding gradients are unlikely.
+- **Early Stopping**: The training process doesn't halt as soon as performance stops improving. This could be useful
+  in our case, and might be implemented in the future.
