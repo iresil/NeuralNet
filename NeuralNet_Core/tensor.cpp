@@ -6,7 +6,8 @@
 Tensor::Tensor(float data, bool requires_grad,
                std::function<void(const std::vector<float>&)> gradfn,
                std::vector<std::shared_ptr<Tensor>> parents) :
-    _data{ data }, _shape{}, _stride{}, _requires_grad{ requires_grad }, _gradfn{ gradfn }, _parents{ parents }
+    _data{ data }, _shape{}, _stride{}, _dimension_x{ 1 }, _dimension_y{ 1 },
+    _requires_grad{ requires_grad }, _gradfn{ gradfn }, _parents{ parents }
 {
     if (_requires_grad)
     {
@@ -17,7 +18,7 @@ Tensor::Tensor(float data, bool requires_grad,
 Tensor::Tensor(std::vector<float> data, bool requires_grad,
                std::function<void(const std::vector<float>&)> gradfn,
                std::vector<std::shared_ptr<Tensor>> parents) :
-    _data{ data }, _shape{ data.size() }, _stride{ 1 },
+    _data{ data }, _shape{ data.size() }, _stride{ 1 }, _dimension_x{ data.size() }, _dimension_y{ 1 },
     _requires_grad{ requires_grad }, _gradfn{ gradfn }, _parents{ parents }
 {
     if (_requires_grad)
@@ -29,27 +30,37 @@ Tensor::Tensor(std::vector<float> data, bool requires_grad,
 Tensor::Tensor(std::vector<std::vector<float>> data, bool requires_grad,
                std::function<void(const std::vector<float>&)> gradfn,
                std::vector<std::shared_ptr<Tensor>> parents) :
-    _shape{ data.size(), data[0].size() }, _stride{ data[0].size(), 1 },
+    _shape{ data.size(), data[0].size() }, _stride{ data[0].size(), 1 }, _dimension_x{ data.size() }, _dimension_y{ data[0].size() },
     _requires_grad{ requires_grad }, _gradfn{ gradfn }, _parents{ parents }
 {
     // Validate dimensions
-    std::size_t expected_cols = data[0].size();
-    for (std::size_t i = 0; i < data.size(); i++)
+    _dimension_x = data.size();
+    _dimension_y = data[0].size();
+
+    std::vector<std::size_t> indices(_dimension_x);
+    std::iota(indices.begin(), indices.end(), 0);
+    std::for_each(std::execution::par, indices.begin(), indices.end(), [&](std::size_t i)
     {
-        if (data[i].size() != expected_cols)
+        if (data[i].size() != _dimension_y)
         {
             throw std::invalid_argument("Dimensions are inconsistent");
         }
-    }
+    });
+
+    _data.resize(_dimension_x * _dimension_y);
 
     // Store in row-major format
-    for (std::size_t i = 0; i < data.size(); i++)
+    std::vector<std::size_t> indices_i(_dimension_x);
+    std::iota(indices_i.begin(), indices_i.end(), 0);
+    std::vector<std::size_t> indices_j(_dimension_y);
+    std::iota(indices_j.begin(), indices_j.end(), 0);
+    std::for_each(std::execution::par, indices_i.begin(), indices_i.end(), [&](std::size_t i)
     {
-        for (std::size_t j = 0; j < data[i].size(); j++)
+        std::for_each(std::execution::par, indices_j.begin(), indices_j.end(), [&](std::size_t j)
         {
-            _data.push_back(data[i][j]);
-        }
-    }
+            _data[i * _dimension_y + j] = data[i][j];
+        });
+    });
 
     if (_requires_grad)
     {
@@ -73,10 +84,7 @@ void Tensor::add_to_grad(const std::vector<float> &grad_update)
     {
         throw std::runtime_error("Gradient shape mismatch during accumulation");
     }
-    for (std::size_t i = 0; i < _grad.size(); i++)
-    {
-        _grad[i] += grad_update[i];
-    }
+    std::transform(std::execution::par, _grad.begin(), _grad.end(), grad_update.begin(), _grad.begin(), std::plus());
 }
 std::size_t Tensor::count() const { return _data.size(); }
 
@@ -139,7 +147,7 @@ void Tensor::backward()
 const float &Tensor::item() const
 {
     // Works only with scalars and 1d tensors
-    if (_data.size() == 1)
+    if (_dimension_x == 1)
     {
         return _data[0];
     }
@@ -152,7 +160,7 @@ const float &Tensor::item() const
 float &Tensor::item()
 {
     // Works only with scalars and 1d tensors
-    if (_data.size() == 1)
+    if (_dimension_x == 1)
     {
         return _data[0];
     }

@@ -11,6 +11,8 @@ class Tensor : public std::enable_shared_from_this<Tensor>
         std::vector<float> _data;
         std::vector<std::size_t> _shape;
         std::vector<std::size_t> _stride;
+        std::size_t _dimension_x;
+        std::size_t _dimension_y;
 
         std::vector<float> _grad;
         std::function<void(const std::vector<float>&)> _gradfn;
