@@ -726,7 +726,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
                     std::for_each(std::execution::par, indices_j_other.begin(), indices_j_other.end(), [&](std::size_t j)
                     {
                         float grad_other_i_j = 0;
-                        for (std::size_t k = 0; k < count_k; k++)
+                        for (std::size_t k = 0; k < count_k_other; k++)
                         {
                             grad_other_i_j += self->operator()(k, i) * grad_output[k * count_j_other + j];
                         }
