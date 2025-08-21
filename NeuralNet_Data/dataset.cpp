@@ -2,6 +2,7 @@
 #include "dataset.h"
 #include <fstream>
 #include <iostream>
+#include <execution>
 #include "../NeuralNet_Core/tensor.h"
 
 std::vector<int> Dataset::read_mnist_labels(std::string path)
@@ -58,21 +59,41 @@ std::vector<std::vector<std::vector<float>>> Dataset::read_mnist(std::string pat
         n_rows = reverse_int(n_rows);
         file.read((char*)&n_cols, sizeof(n_cols));
         n_cols = reverse_int(n_cols);
-        for (int i = 0; i < image_count; ++i)
+
+        const std::size_t images_per_chunk = 10;
+        std::vector<unsigned char> buffer(images_per_chunk * n_rows * n_cols);
+
+        dataset.resize(image_count);
+
+        for (std::size_t start = 0; start < image_count; start += images_per_chunk)
         {
-            std::vector<std::vector<float>> image;
-            for (int r = 0; r < n_rows; ++r)
+            std::size_t count = std::min(images_per_chunk, image_count - start);
+
+            // Sequential disk read into buffer
+            file.read(reinterpret_cast<char *>(buffer.data()), count * n_rows * n_cols);
+
+            // Parallel transform into dataset
+            std::vector<std::size_t> indices(count);
+            std::iota(indices.begin(), indices.end(), 0);
+
+            std::for_each(std::execution::par, indices.begin(), indices.end(), [&](std::size_t idx)
             {
-                std::vector<float> row;
-                for (int c = 0; c < n_cols; ++c)
+                std::size_t i = start + idx;
+                std::vector<std::vector<float>> &image = dataset[i];
+                image.resize(n_rows);
+
+                for (int r = 0; r < n_rows; r++)
                 {
-                    unsigned char temp = 0;
-                    file.read((char*)&temp, sizeof(temp));
-                    row.push_back(convert_to_float(temp));
+                    std::vector<float> &row = image[r];
+                    row.resize(n_cols);
+
+                    for (int c = 0; c < n_cols; c++)
+                    {
+                        std::size_t buf_idx = idx * n_rows * n_cols + r * n_cols + c;
+                        row[c] = convert_to_float(buffer[buf_idx]);
+                    }
                 }
-                image.push_back(row);
-            }
-            dataset.push_back(image);
+            });
         }
     }
     return dataset;
