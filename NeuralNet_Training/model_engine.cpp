@@ -48,7 +48,7 @@ void ModelEngine::train(DataLoader &dataloader, NeuralNetwork &model, CrossEntro
         if (batch_n % log_interval == 0)
         {
             std::cout << "Loss: " << std::fixed << std::setprecision(6) << total_loss->item() << "  [" << seen_samples
-                << "/" << dataloader.n_samples() << "]" << std::endl;
+                      << "/" << dataloader.n_samples() << "]" << std::endl;
         }
 
         total_loss->backward();
@@ -59,12 +59,19 @@ void ModelEngine::train(DataLoader &dataloader, NeuralNetwork &model, CrossEntro
 
 void ModelEngine::test(DataLoader &dataloader, NeuralNetwork &model, CrossEntropy &loss_fn)
 {
+    std::size_t log_interval = 50;
+    std::size_t batch_n = 0;
+
     float running_loss = 0.0f;
+    float avg_loss = 0.0f;
+    float accuracy = 0.0f;
     std::size_t correct = 0;
     std::size_t n_samples = 0;
 
     for (const auto &batch : dataloader)
     {
+        batch_n++;
+
         for (const auto &[label, tensor] : batch)
         {
             auto output = model(tensor);
@@ -75,13 +82,22 @@ void ModelEngine::test(DataLoader &dataloader, NeuralNetwork &model, CrossEntrop
             running_loss += loss_fn(output, label)->item();
             n_samples++;
         }
+
+        if (batch_n % log_interval == 0)
+        {
+            accuracy = static_cast<float>(correct) / static_cast<float>(n_samples);
+            avg_loss = running_loss / n_samples;
+
+            std::cout << "Avg Loss: " << std::fixed << std::setprecision(6) << avg_loss << "  [" << n_samples
+                      << "/" << dataloader.n_samples() << "]" << std::endl;
+        }
     }
 
-    float accuracy = static_cast<float>(correct) / static_cast<float>(n_samples);
-    float avg_loss = running_loss / n_samples;
+    accuracy = static_cast<float>(correct) / static_cast<float>(n_samples);
+    avg_loss = running_loss / n_samples;
 
-    std::cout << std::fixed << "Test error:\n  accuracy: " << std::setprecision(1) << accuracy * 100.0f
-        << "%\n  avg loss: " << std::setprecision(6) << avg_loss << std::endl;
+    std::cout << std::fixed << "Test error:\n  Accuracy: " << std::setprecision(1) << accuracy * 100.0f
+              << "%\n  Avg Loss: " << std::setprecision(6) << avg_loss << std::endl;
 }
 
 void ModelEngine::train_new_model(InputData selected_dataset, std::string train_data_path, std::string train_labels_path, std::string test_data_path, std::string test_labels_path,
