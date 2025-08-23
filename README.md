@@ -24,11 +24,11 @@ Some of these changes are:
     - Made building and debugging easier by switching to Visual Studio (instead of using CMake).
     - Improved component separation by splitting the code into multiple projects.
     - Clarified external API by reevaluating which includes should be added in `.h` files and which should be added in `.cpp` files.
-    - Decreased coupling between classes by using forward declarations (e.g. `class Tensor;`) where includes where unnecessary.
+    - Decreased coupling between classes by using forward declarations (e.g. `class Tensor;`) where includes were unnecessary.
     - Parameterized the NeuralNetwork class so that it doesn't need to be redefined every time it's used.
 - **Performance**
-    - Optimized compile times by using forward declarations (e.g. `class Tensor;`) where includes where unnecessary.
-    - Optimized compile times by precompiling libraries that are used across multiple classes, or are particularly heavy.
+    - Optimized compile times by using forward declarations (e.g. `class Tensor;`) where includes were unnecessary.
+    - Optimized compile times by using precompiled headers for libraries that are used across multiple classes, or are particularly heavy.
     - Reduced training times by adding a degree of parallelism.
 
 > [!NOTE]
@@ -36,7 +36,7 @@ Some of these changes are:
 > acceptable for the purposes of this project:
 > - Portability loss, since the project is now Windows-specific.
 >   _This was considered acceptable, especially because the code assumes that it's running on a little-endian system
->   (which might not always be the case when using Linux)._
+>   (which might not always be the case when using Linux, since it can also support architectures that may be big-endian)._
 > - Automation limitations, since CI/CD pipelines and build automation often prefer CMake.
 >   _This was considered irrelevant to this project, because there were no plans of using any such type of automation._
 
@@ -53,18 +53,19 @@ The solution can be built using **Visual Studio 2022** and it contains 6 differe
 - **NeuralNet_Test**: Google Test project to ensure code correctness.
 
 ## Core Components
-- **Tensor**: This is not a building block of the neural network per se, but it encapsulates the math that's necessary
-  for the neural network to operate.
+- **Tensor**: Conceptually, a tensor is a container for numerical data. In our implementation, it also encapsulates the math that's
+  necessary for the neural network to operate.
 - **Input Layer**: The input layer usually operates on tensors of various sizes, reshaping them into flat vectors
   on which the rest of the transformations will be applied.
 - **Fully Connected Layer**: The fully connected (or dense) layer is the most important part of a neural network.
-  It applies a _learnable affine transformation_ to its inputs. An affine transformation is just a linear transformation
-  (matrix multiplication) followed by a translation (the addition of a bias vector). In geometry, these operations preserve points,
-  straight lines, and planes (they maintain "affine structure"). Specifically in neural networks, the weight and bias inputs
-  are not fixed. The model learns them by minimizing a loss function during training, using backpropagation and gradient descent.
-  So, the transformation is learnable, because the neural network tunes weight and bias to fit the data.
-- **Neuron**: A neuron is a scalar value on which the learnable affine transformation of fully connected layers is applied.
-  When defining a dense layer, the number of input and output features is necessary. The number of input features is the number of
+  It is the code that applies a _learnable affine transformation_ to its inputs. An affine transformation is just a linear
+  transformation (matrix multiplication) followed by a translation (the addition of a bias vector). In geometry, these operations
+  preserve points, straight lines, and planes (they maintain "affine structure"). Specifically in neural networks, the weight and bias
+  parameters are not fixed. The model learns them by minimizing a loss function during training, using backpropagation and gradient
+  descent. So, the transformation is learnable, because the neural network tunes weight and bias to fit the data.
+- **Neuron**: Conceptually, a neuron is the smallest computational unit contained in a layer. Its output is a scalar value.
+  When implementing a neural network, we may refer to a neuron's output as a neuron, for simplicity reasons. When defining a dense layer,
+  knowing the number of input and output features is necessary. The number of input features is the number of
   neurons produced by the previous layer and the number of output features is the number of neurons that this layer will produce.
   So a layer with 10 input neurons and 5 output neurons is a layer with a weight tensor of shape [5,10] and a bias tensor of shape [5].
 - **Activation Layer**: Because executing multiple linear transformations one after the other would just lead to
@@ -72,18 +73,21 @@ The solution can be built using **Visual Studio 2022** and it contains 6 differe
   This helps the neural network identify and represent complex patterns or relationships in the data. The activation layer
   is a software abstraction that wraps the activation function so that it can be easily defined as part of the model graph.
 - **Loss Function**: This is what guides the learning process in neural networks. A loss function is what quantifies the difference
-  between the model's predictions and the actual values, providing feedback to minimize errors.
+  between the model's predictions and the actual values, providing feedback to minimize errors. The type of loss function that gets
+  applied is selected based on the task at hand.
 - **Optimizer**: After a prediction is made and the loss is calculated, the optimizer is what achieves minimization of the loss
   by iteratively adjusting weights and biases, according to the defined learning rate.
 
 ## Core Training Steps
-1. **Forward Propagation**: During forward propagation, input data passes through each subsequent layer of the neural network,
-   so that the final prediction can be generated.
-2. **Loss Calculation**: The distance (loss) between prediction and desired value is calculated.
+1. **Forward Propagation**: Input data flows through each subsequent layer of the neural network, producing an output (prediction).
+2. **Loss Calculation**: The loss function measures how far the prediction is from the target value (e.g. mean squared error for
+   regression, cross-entropy for classification).
 3. **Backward Propagation**: During backward propagation (or backpropagation), the neural network "learns by its mistakes".
-   The loss is propagated through the neural network's layers in reverse order, so that weights and biases per layer can be
-   adjusted. This is called gradient descent.
-4. **Optimizer Update**: Performs the actual parameter (weight and bias) adjustment.
+   The end goal is to minimize the output of the loss function. Backpropagation is the process of traversing the neural network's
+   layers in reverse order, to generate the negative gradient of the loss function (essentially, a way of flagging certain paths as
+   reinforced and others as avoided).
+4. **Optimizer Update**: The optimizer (e.g. Stochastic Gradient Descent, Adam) utilizes gradients to adjust weights and biases,
+   so that in future iterations (i.e. epochs) the loss can be minimized.
 
 ## Tensors
 ### Automatic Differentiation (Autograd)
@@ -110,10 +114,11 @@ The solution can be built using **Visual Studio 2022** and it contains 6 differe
 
 ## Layers
 ### Flatten Layer
-Reshapes inputs, usually from multi-dimensional into flat vectors, applied before fully connected layers.
+This is commonly the first layer in a neural network. It reshapes inputs into flat vectors, which will then be passed as input to the
+fully connected layers.
 
 ### Linear Layer
-Performs a *learnable affine transformation* on its input:
+Each linear (or fully connected) layer performs a *learnable affine transformation* on its input:
 ```mermaid
 xychart-beta
     line [-4, -2, 0, 2, 4]
@@ -123,22 +128,22 @@ y = W \cdot x + b
 ```
 - $`x`$: Input tensor of shape `[batch_size, input_dim]`
 - $`y`$: Output tensor of shape `[batch_size, output_dim]`
-- $`W`$: Weight of shape `[output_dim, input_dim]`
-- $`b`$: Bias vector of shape `[output_dim]`
+- $`W`$: Weight of shape `[output_dim, input_dim]` (learnable parameter, updated during training)
+- $`b`$: Bias vector of shape `[output_dim]` (learnable parameter, updated during training)
 
 ### Activation Layer
-Some possible activation functions that can be applied by the activation layer are the following
-(in our case, we're going to be using the ReLU function):
+An activation layer applies an activation function to each of the linear layer's outputs, to introduce nonlinearity to the model.
+Some possible activation functions to apply are the following:
 
 | Function | Formula | Output Range | Description |
 | --- | :---: | :---: | --- |
-| Sigmoid | $`\sigma(x) = \frac{1}{1 + e^{-x}}`$ | $`(0, 1)`$ | S-shaped; maps input to probability-like values |
+| Sigmoid | $`\sigma(x) = \frac{1}{1 + e^{-x}}`$ | $`(0, 1)`$ | S-shaped; maps input to probability-like values; can cause vanishing gradients for large $`x`$ |
 | ReLU | $`\text{ReLU}(x) = \max(0, x)`$ | $`[0, \infty)`$ | Passes positive values; zeros out negatives |
-| Leaky ReLU | $`\text{LeakyReLU}(x) = \max(\alpha x, x)`$ | $`(-\infty, \infty)`$ | Like ReLU but allows small slope for negatives |
+| Leaky ReLU | $`\text{LeakyReLU}(x) = \max(\alpha x, x)`$ | $`(-\infty, \infty)`$ | Like ReLU but allows small slope for negatives; $`a`$ is typically small |
 | Tanh | $`\tanh(x) = \frac{e^x - e^{-x}}{e^x + e^{-x}}`$ | $`(-1, 1)`$ | S-shaped; zero-centered output for balanced updates |
 
 #### Rectified Linear Unit Layer (ReLU)
-This is an activation layer that applies the rectified linear unit function element-wise,
+This is the activation layer implementation that we'll be using. It applies the rectified linear unit function element-wise,
 essentially removing all negative values from the input tensor.
 ```mermaid
 xychart-beta
@@ -149,26 +154,29 @@ ReLU(x) = (x)^{+} = max(0,x)
 ```
 
 ### SoftMax Layer
-Converts raw scores (logits) into probabilities, which ensures normalization of the model's outputs.
-The normalized output is then compatible with various loss functions, ensuring the resulting gradients will make sense.
+Converts raw scores (logits) into probabilities, which ensures normalization of the model's outputs (commonly used in multi-class
+classification, where outputs sum to 1 across classes).
+The normalized output is compatible with various loss functions (often paired with cross-entropy loss), ensuring the resulting
+gradients will make sense.
 ```math
 \text{Softmax}(z_i) = \frac{e^{z_i}}{\sum_{j=1}^{C} e^{z_j}}
 ```
 
 ## Loss Functions
-What follows is a mapping between various loss functions, their formulas and the type of predictions to which they can be applied:
+What follows is a mapping between various loss functions, their formulas and the type of predictions to which they can be applied.
+In our case, we're going to be using **Negative Log Likelihood**.
 
 | Prediction Type | Loss Type | Loss Function | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Formula&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Notes |
 | --- | --- | :---: | --- | --- |
 | Continuous Values | Regression | Mean Squared Error | $`\text{MSE} = \frac{1}{n} \sum_{i=1}^{n} (y_i - \hat{y}_i)^2`$ | Sensitive to Outliers |
 | Continuous Values | Regression | Mean Absolute Error | $`\text{MAE} = \frac{1}{n} \sum_{i=1}^{n} \mid y_i - \hat{y}_i\mid`$ | Less sensitive to outliers but not differentiable at zero |
 | Continuous Values | Regression | Huber Loss | $`L_\delta = \begin{cases} \frac{1}{2} (y_i - \hat{y}_i)^2 & \text{if } \mid y_i - \hat{y}_i\mid \leq \delta \\ \delta (\mid y_i - \hat{y}_i\mid - \frac{1}{2} \delta) & \text{if } \mid y_i - \hat{y}_i\mid > \delta \end{cases}`$ | Combines MSE and MAE, quadratic for small errors, linear for large ones. Requires threshold parameter $`\delta`$ |
-| Discrete Class Labels | Binary Classification | Binary Cross-Entropy (Log Loss) | $`L_{\text{BCE}} = -\left[ y \log(\hat{y}) + (1 - y) \log(1 - \hat{y}) \right]`$ | How close predicted probabilites are to actual labels |
+| Discrete Class Labels | Binary Classification | Binary Cross-Entropy (Log Loss) | $`L_{\text{BCE}} = -\left[ y \log(\hat{y}) + (1 - y) \log(1 - \hat{y}) \right]`$ | How close predicted probabilities are to actual labels |
 | Discrete Class Labels | Multi-Class Classification | Categorical Cross-Entropy | $`L_{\text{CCE}} = -\sum_{i=1}^{C} y_i \log(\hat{y}_i)`$ | Compares predicted probability distribution to the true class label (assumes one-hot encoded labels) |
-| Discrete Class Labels | Multi-Class Classification | Sparse Categorical Cross-Entropy | $`L_{\text{SCCE}} = -\sum_{i=1}^{C} \delta_{i,y} \log(\hat{y}_i)`$ | Used when labels are integer-encoded instead of one-hot vectors |
+| Discrete Class Labels | Multi-Class Classification | Sparse Categorical Cross-Entropy | $`L_{\text{SCCE}} = -\sum_{i=1}^{C} \delta_{i,y} \log(\hat{y}_i)`$ | Used when labels are integer-encoded instead of one-hot vectors, where $`y`$ is the integer class index |
 | Probabilistic Models | Log-Probability Classification | Negative Log-Likelihood | $`\text{NLL} = -\log(\hat{y}_y)`$ | Equivalent to sparse cross-entropy when using log-probabilities (more stable when dealing with small probabilities) |
-| Probabilistic Models | Probability Distribution Divergence | Kullback-Leibler Divergence (KL Divergence) | $`D_{\text{KL}}(P \parallel Q) = \sum_i P(i) \log \left( \frac{P(i)}{Q(i)} \right)`$ | Measures divergence between two probability distributions |
-| Metric Learning | Similarity (Pairwise) | Contrastive Loss | $`L_{\text{cont}} = (1 - Y) \cdot D^2 + Y \cdot \max(0, m - D)^2`$ | Encourages similar items to be close; dissimilar items to be farther than margin $`m`$ |
+| Probabilistic Models | Probability Distribution Divergence | Kullback-Leibler Divergence (KL Divergence) | $`D_{\text{KL}}(P \parallel Q) = \sum_i P(i) \log \left( \frac{P(i)}{Q(i)} \right)`$ | Measures divergence between two probability distributions; calculation is asymmetric, meaning $`D_{\text{KL}}(P \parallel Q) \not= D_{\text{KL}}(Q \parallel P)`$ |
+| Metric Learning | Similarity (Pairwise) | Contrastive Loss | $`L_{\text{cont}} = (1 - Y) \cdot D^2 + Y \cdot \max(0, m - D)^2`$ | Encourages similar items to be close and dissimilar items to be farther than margin $`m`$ ($`Y`$ is usually 0 for similar, 1 for dissimilar pairs) |
 | Metric Learning | Similarity (Triplet) | Triplet Loss | $`L_{\text{triplet}} = \max(0, D_{ap} - D_{an} + \alpha)`$ | Trains model to separate anchor from negative by at least margin $`\alpha`$ |
 
 ## Optimizer Types
@@ -177,21 +185,29 @@ In our case, we're going to be using **Stochastic Gradient Descent**.
 
 | Optimizer | Description | Key Features / Notes |
 | --- | --- | --- |
-| SGD (Stochastic Gradient Descent) | Updates parameters using a single sample or mini-batch | Simple and widely used; sensitive to learning rate |
+| SGD (Stochastic Gradient Descent) | Updates parameters using a single sample (rarely) or mini-batch (more common) | Simple and widely used; sensitive to learning rate |
 | SGD with Momentum | Adds a velocity term to accelerate updates in consistent gradient directions | Helps avoid local minima and slow convergence |
-| Nesterov Accelerated Gradient (NAG) | Like momentum, but looks ahead before computing gradient | More responsive to changes in gradient direction |
-| Adagrad | Adaptive learning rates for each parameter based on historical gradients | Good for sparse data; learning rate shrinks over time |
-| RMSprop | Maintains moving average of squared gradients | Solves Adagrad’s shrinking learning rate problem |
-| Adam (Adaptive Moment Estimation) | Combines momentum and RMSprop ideas | Most popular; efficient and adaptive |
-| AdamW | Adam with decoupled weight decay | Better regularization for large models |
-| AdaMax | Variant of Adam using infinity norm | More stable in some cases |
+| Nesterov Accelerated Gradient (NAG) | Like momentum, but looks ahead (applies the momentum step) before computing gradient | More responsive to changes in gradient direction |
+| Adagrad | Adaptive learning rates for each parameter based on historical gradients (scales learning rates inversely proportional to the square root of the sum of past squared gradients) | Good for sparse data; learning rate shrinks over time |
+| RMSprop | Maintains an exponentially decaying moving average of squared gradients | Solves Adagrad’s shrinking learning rate problem |
+| Adam (Adaptive Moment Estimation) | Combines momentum and RMSprop ideas; keeps moving averages of both gradients (first moment) and squared gradients (second moment) | Most popular; efficient and adaptive |
+| AdamW | Adam with decoupled weight decay | Better regularization for large models; improves generalization |
+| AdaMax | Variant of Adam that replaces the second moment estimate with the infinity norm | More stable in some cases |
 | Nadam | Adam + Nesterov accelerated gradient | Faster convergence in some settings |
-| FTRL (Follow-The-Regularized-Leader) | Combines L1 and L2 regularization, good for sparse data | Often used in large-scale recommendation systems |
-| L-BFGS | Quasi-Newton method, uses second-order approximation | Not common in deep learning due to memory overhead |
-| AMSGrad | Modification of Adam to guarantee convergence | Fixes potential non-convergence of Adam |
+| FTRL (Follow-The-Regularized-Leader) | Combines L1 and L2 regularization, good for sparse data | Often used in large-scale recommendation systems; especially suited for online learning and very large sparse datasets |
+| L-BFGS | Quasi-Newton method, uses second-order approximation for the inverse Hessian | Not common in deep learning due to memory overhead; useful for smaller models |
+| AMSGrad | Modification of Adam that ensures the second moment estimate never decreases | Fixes potential non-convergence of Adam |
 
 ## Training Sets
 ### MNIST Dataset Structure
+To train our model, we're going to be using the MNIST and FashionMNIST datasets. Each of these datasets is structured as a set of:
+- Training Images
+- Training Labels
+- Testing Images
+- Testing Labels
+
+All of those files are stored in the same way, i.e. in binary format, with a fixed header that's followed by pixel data.
+The following diagram shows the structure of an image file (sizes are in bytes).
 ```mermaid
 packet-beta
   0-3: "Magic Number"
