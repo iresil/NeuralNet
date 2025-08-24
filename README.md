@@ -89,7 +89,7 @@ The solution can be built using **Visual Studio 2022** and it contains 6 differe
 4. **Optimizer Update**: The optimizer (e.g. Stochastic Gradient Descent, Adam) utilizes gradients to adjust weights and biases,
    so that in future iterations (i.e. epochs) the loss can be minimized.
 
-## Tensors
+## Tensor Operations
 ### Automatic Differentiation (Autograd)
 #### Rules for Tensor Addition (Elementwise Addition)
 | Forward Type | Who Broadcast? | Who Gets Gradient Summed? | Notes |
@@ -133,18 +133,33 @@ y = W \cdot x + b
 
 ### Activation Layer
 An activation layer applies an activation function to each of the linear layer's outputs, to introduce nonlinearity to the model.
-Some possible activation functions to apply are the following:
+It can be used as either a **hidden** layer or the **output** layer and technically it can follow any type of layer that produces a tensor
+(for example, it can be used after convolutional layers).
 
-| Function | Formula | Output Range | Description |
-| --- | :---: | :---: | --- |
-| Sigmoid | $`\sigma(x) = \frac{1}{1 + e^{-x}}`$ | $`(0, 1)`$ | S-shaped; maps input to probability-like values; can cause vanishing gradients for large $`x`$ |
-| ReLU | $`\text{ReLU}(x) = \max(0, x)`$ | $`[0, \infty)`$ | Passes positive values; zeros out negatives |
-| Leaky ReLU | $`\text{LeakyReLU}(x) = \max(\alpha x, x)`$ | $`(-\infty, \infty)`$ | Like ReLU but allows small slope for negatives; $`a`$ is typically small |
-| Tanh | $`\tanh(x) = \frac{e^x - e^{-x}}{e^x + e^{-x}}`$ | $`(-1, 1)`$ | S-shaped; zero-centered output for balanced updates |
+Activation functions can either be applied element-wise (i.e. pointwise) or vector-level:
+- **element-wise**: Each output only depends on its own input, and so ensures no interaction between elements. This is the default choice for _most_ hidden layers.
+- **vector-level**: Each output also depends on the whole vector, may enforce constraints or introduce competition or cooperation between elements.
+  Can be used for probabilities, rankings or normalized weights.
+
+Some of the most common activation functions are the following:
+
+| Function | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Formula&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Level | &nbsp;Output&nbsp;Range&nbsp; | Description |
+| --- | :---: | :---: | :---: | --- |
+| Sigmoid | $`\sigma(x) = \frac{1}{1 + e^{-x}}`$ | Element | $`(0, 1)`$ | S-shaped; maps input to probability-like values; can cause vanishing gradients for large $`x`$ |
+| Tanh | $`\tanh(x) = \frac{e^x - e^{-x}}{e^x + e^{-x}}`$ | Element | $`(-1, 1)`$ | S-shaped; zero-centered output for balanced updates |
+| Softmax | $`\text{Softmax}(z_i) = \frac{e^{z_i}}{\sum_{j=1}^{C} e^{z_j}}`$ | Vector | $`(0, 1)`$, sum=1 | Converts a vector of raw scores (logits) into a probability distribution over $`C`$ classes |
+| ReLU | $`\text{ReLU}(x) = \max(0, x)`$ | Element | $`[0, \infty)`$ | Passes positive values; zeros out negatives |
+| Leaky ReLU | $`\text{LReLU}(x) = \max(\alpha x, x)`$ | Element | $`(-\infty, \infty)`$ | Like ReLU but allows small slope for negatives; $`a`$ is typically small |
+| ELU | $`\text{ELU}(x) = \begin{cases} x & x > 0 \\ \alpha(e^x - 1) & x \le 0 \end{cases}`$ | Element | $`(-\alpha, \infty)`$ | Exponential Linear Unit; like Leaky ReLU, but with exponential curve; can speed up learning |
+| Softplus | $`\text{Softplus}(x) = \ln(1 + e^x)`$ | Element | $`(0, \infty)`$ | Smooth approximaton of ReLU; always positive and differentiable everywhere; avoids the "dead neuron" problem |
+
+For hidden layers, GELU, Swish and Mish are increasing in popularity, but we won't be covering those here.
+
+Softmax is not the only activation function that operates on the vector level, but the rest (like Sparsemax or Softmin) are similar enough and thus we won't be covering those.
 
 #### Rectified Linear Unit Layer (ReLU)
-This is the activation layer implementation that we'll be using. It applies the rectified linear unit function element-wise,
-essentially removing all negative values from the input tensor.
+This is the activation layer implementation that we'll be using for our hidden layers. It applies the rectified linear unit function element-wise,
+essentially removing all negative values from its input tensor.
 ```mermaid
 xychart-beta
     line [0, 0, 0, 2, 4]
@@ -153,17 +168,25 @@ xychart-beta
 ReLU(x) = (x)^{+} = max(0,x)
 ```
 
-### SoftMax Layer
-Converts raw scores (logits) into probabilities, which ensures normalization of the model's outputs (commonly used in multi-class
+### Output Layer
+An output layer is the final step that generates a neural network's output (the prediction). It can be either an activation layer
+or a linear layer, and its type depends on the type of problem that the neural network is trying to solve.
+The output layer can sometimes be implemented as part of the loss function.
+
+#### SoftMax Layer
+This is going to be the output layer of our neural network. Its purpose is to apply the softmax function, which
+converts raw scores (logits) into probabilities and ensures the normalization of the model's outputs (commonly used in multi-class
 classification, where outputs sum to 1 across classes).
-The normalized output is compatible with various loss functions (often paired with cross-entropy loss), ensuring the resulting
-gradients will make sense.
+
+The normalized output generated by this layer is compatible with various loss functions (often paired with cross-entropy loss),
+ensuring the resulting gradients will make sense.
 ```math
 \text{Softmax}(z_i) = \frac{e^{z_i}}{\sum_{j=1}^{C} e^{z_j}}
 ```
 
 ## Loss Functions
 What follows is a mapping between various loss functions, their formulas and the type of predictions to which they can be applied.
+
 In our case, we're going to be using **Negative Log Likelihood**.
 
 | Prediction Type | Loss Type | Loss Function | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Formula&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Notes |
@@ -181,6 +204,7 @@ In our case, we're going to be using **Negative Log Likelihood**.
 
 ## Optimizer Types
 What follows is a brief description of the most commonly used types of optimizers in neural network training.
+
 In our case, we're going to be using **Stochastic Gradient Descent**.
 
 | Optimizer | Description | Key Features / Notes |
