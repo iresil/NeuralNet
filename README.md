@@ -52,29 +52,20 @@ The solution can be built using **Visual Studio 2022** and it contains 6 differe
 - **NeuralNet_Data**: C++ static library that contains everything related to saving and loading both input and output data.
 - **NeuralNet_Test**: Google Test project to ensure code correctness.
 
-## Core Components
+## Core Concepts
 - **Tensor**: Conceptually, a tensor is a container for numerical data. In our implementation, it also encapsulates the math that's
   necessary for the neural network to operate.
-- **Input Layer**: The input layer usually operates on tensors of various sizes, reshaping them into flat vectors
-  on which the rest of the transformations will be applied.
-- **Fully Connected Layer**: The fully connected (or dense) layer is the most important part of a neural network.
-  It is the code that applies a _learnable affine transformation_ to its inputs. An affine transformation is just a linear
-  transformation (matrix multiplication) followed by a translation (the addition of a bias vector). In geometry, these operations
-  preserve points, straight lines, and planes (they maintain "affine structure"). Specifically in neural networks, the weight and bias
-  parameters are not fixed. The model learns them by minimizing a loss function during training, using backpropagation and gradient
-  descent. So, the transformation is learnable, because the neural network tunes weight and bias to fit the data.
-- **Neuron**: Conceptually, a neuron is the smallest computational unit contained in a layer. Its output is a scalar value.
-  When implementing a neural network, we may refer to a neuron's output as a neuron, for simplicity reasons. When defining a dense layer,
-  knowing the number of input and output features is necessary. The number of input features is the number of
-  neurons produced by the previous layer and the number of output features is the number of neurons that this layer will produce.
-  So a layer with 10 input neurons and 5 output neurons is a layer with a weight tensor of shape [5,10] and a bias tensor of shape [5].
-- **Activation Layer**: Because executing multiple linear transformations one after the other would just lead to
-  a different linear transformation, an activation function is necessary, to introduce nonlinearity to the neural network.
-  This helps the neural network identify and represent complex patterns or relationships in the data. The activation layer
-  is a software abstraction that wraps the activation function so that it can be easily defined as part of the model graph.
+- **Input Layer**: The input layer is the first layer of a neural network, that receives raw input data. It typically doesn't transform
+  the data and only passes it into the neural network, but sometimes preprocessing also happens either before or alongside it.
+- **Output Layer**: The output layer is the step that generates the final prediction.
+- **Hidden Layer**: A hidden layer is any layer that is located between the input and output layers. It applies learned transformations
+  to its input, to learn patterns that help the neural network make decisions. It is called "hidden" because its output is not directly
+  observed.
+- **Neuron**: Conceptually, a neuron is the smallest computational unit contained in any layer. Its output is a scalar value.
+  In practice, we often refer to a neuron's output as a _neuron_, though technically that's the result of the neuron's computation.
 - **Loss Function**: This is what guides the learning process in neural networks. A loss function is what quantifies the difference
-  between the model's predictions and the actual values, providing feedback to minimize errors. The type of loss function that gets
-  applied is selected based on the task at hand.
+  between the model's predictions and the actual values, providing a scalar value that the optimizer seeks to minimize. The type of
+  loss function that gets applied is selected based on the task at hand.
 - **Optimizer**: After a prediction is made and the loss is calculated, the optimizer is what achieves minimization of the loss
   by iteratively adjusting weights and biases, according to the defined learning rate.
 
@@ -113,12 +104,56 @@ The solution can be built using **Visual Studio 2022** and it contains 6 differe
 | 2D &#183; 2D | 2D | Neither | No summing needed | Matrix-matrix product |
 
 ## Layers
-### Flatten Layer
-This is commonly the first layer in a neural network. It reshapes inputs into flat vectors, which will then be passed as input to the
-fully connected layers.
+### Input Layer
+An input layer is the first step that provides the neural network with its data inputs. Its type depends on the way that the neural network's
+input data has been structured.
 
-### Linear Layer
-Each linear (or fully connected) layer performs a *learnable affine transformation* on its input:
+| Input Layer Type | Data Type | Typical Use Case | Notes |
+| --- | --- | --- | --- |
+| Fully Connected | Flat numerical vectors | Tabular data, simple regression/classification tasks | Each input feature maps to one neuron |
+| Flatten | Multi-dimensional arrays (e.g. images) | Image classification, transitioning from convolutional layers | Converts 2D/3D tensors to 1D vectors |
+| Conv1D | 1D sequential data | Time series analysis, audio signals | Used for patterns in sequences |
+| Conv2D | 2D spatial data (e.g. images) | Image recognition, object detection | Preserves spatial structure for convolution |
+| Conv3D | 3D spatial data (e.g. video, volumetric scans) | Medical imaging, video classification | Handles width, height and depth |
+| Embedding | Categorical or tokenized text | Natural Language Processing (NLP), recommendation systems | Maps discrete tokens to dense vectors |
+| Sequence | Ordered sequences (e.g. text, time series) | NLP, speech recognition, forecasting | Often used with RNNs, LSTMs, Transformers |
+| Sparse | Sparse vectors (many zeros) | High-dimensional data like text (bag-of-words) | Optimized for memory and speed |
+| Image | Pixel data | Computer vision tasks | Often includes shape and channel info |
+| Custom | Mixed or structured data | Multimodal models (e.g. combining text and images) | Can be tailored to specific architectures |
+
+#### Flatten Layer
+This is the input layer that we're using in our implementation. It is typically used for transitioning from spatial data (e.g. images) to
+linear layers. It reshapes its inputs into flat vectors, which will then be passed as input to the linear layers.
+
+### Hidden Layer
+A hidden layer is located "inside" the neural network (i.e. does not directly receive data from the outside world or provide predictions to it).
+It transforms its inputs into a different form to enable learning. Its type depends on the type of problem that the neural network is trying
+to solve.
+
+| Hidden Layer Type | Used For | Typical Use Case | Key Characteristics |
+| --- | --- | --- | --- |
+| Fully Connected | General purpose learning | Tabular data, simple classification or regression | Every neuron connects to every neuron in the previous layer |
+| Convolutional (Conv1D/Conv2D/Conv3D) | Spatial or sequential feature extraction | Image recognition, audio analysis, video classification | Learns local patterns using filters; preserves spatial structure |
+| Recurrent (RNN) | Sequential data | Time series forecasting, text generation, speech recognition | Maintains memory of previous inputs; good for temporal dependencies |
+| LSTM (Long Short-Term Memory) | Long-range dependencies in sequences | Language modeling, translation, music generation | Specialized RNN that avoids vanishing gradient problem |
+| GRU (Gated Recurrent Unit) | Efficient sequence modelling | Similar to LSTM, but faster to train | Fewer gates than LSTM; balances performance and complexity |
+| Transformer Encoder | Attention-based sequence modelling | NLP tasks, vision transformers, recommendation systems | Uses self-attention to model relationships between all input positions |
+| Autoencoder Bottleneck | Dimensionality reduction | Data compression, anomaly detection | Learns compressed representation of input data |
+| Attention | Focused feature weighting | Translation, summarization, multimodal learning | Learns to focus on relevant parts of input dynamically |
+| Residual | Deep networks | Image classification (ResNet), deep architectures | Adds input back to output to preserve information and ease training; in most frameworks this is a connection pattern instead of a dedicated layer |
+| Batch Normalization | Stabilizing training | Any deep network | Normalizes activations to reduce internal covariate shift (auxiliary/regularization layer) |
+| Dropout | Regularization | Preventing overfitting in any model | Randomly disables neurons during training to improve generalization (auxiliary/regularization layer) |
+
+#### Linear (Fully Connected) Layer
+The fully connected (or dense) layer is the code that applies a _learnable affine transformation_ to its inputs. An affine transformation
+is just a linear transformation (matrix multiplication) followed by a translation (the addition of a bias vector). In geometry, these
+operations preserve points, straight lines, and planes (i.e. they maintain "affine structure"). Specifically in neural networks, the weight
+and bias parameters are not fixed. The model learns them by minimizing a loss function during training, using backpropagation and gradient
+descent. So, the transformation is learnable, because the neural network tunes weight and bias to fit the data.
+
+When defining a dense layer, knowing the number of input and output features is necessary. The number of input features is the number of
+neurons produced by the previous layer and the number of output features is the number of neurons that this layer will produce.
+So a layer with 10 input neurons and 5 output neurons is a layer with a weight tensor of shape [5,10] and a bias tensor of shape [5].
 ```mermaid
 xychart-beta
     line [-4, -2, 0, 2, 4]
@@ -132,13 +167,17 @@ y = W \cdot x + b
 - $`b`$: Bias vector of shape `[output_dim]` (learnable parameter, updated during training)
 
 ### Activation Layer
-An activation layer applies an activation function to each of the linear layer's outputs, to introduce nonlinearity to the model.
+Because executing multiple linear transformations one after the other would just lead to a different linear transformation, applying
+activation functions is necessary, to introduce nonlinearity to the neural network. This helps the neural network identify and represent complex
+patterns or relationships in the data.
+
+The activation layer is a software abstraction that wraps an activation function so that it can be easily defined as part of the model graph.
 It can be used as either a **hidden** layer or the **output** layer and technically it can follow any type of layer that produces a tensor
 (for example, it can be used after convolutional layers).
 
 Activation functions can either be applied element-wise (i.e. pointwise) or vector-level:
 - **element-wise**: Each output only depends on its own input, and so ensures no interaction between elements. This is the default choice for _most_ hidden layers.
-- **vector-level**: Each output also depends on the whole vector, may enforce constraints or introduce competition or cooperation between elements.
+- **vector-level**: Each output also depends on the whole vector, and may enforce constraints or introduce competition and cooperation between elements.
   Can be used for probabilities, rankings or normalized weights.
 
 Some of the most common activation functions are the following:
@@ -155,7 +194,7 @@ Some of the most common activation functions are the following:
 
 For hidden layers, GELU, Swish and Mish are increasing in popularity, but we won't be covering those here.
 
-Softmax is not the only activation function that operates on the vector level, but the rest (like Sparsemax or Softmin) are similar enough and thus we won't be covering those.
+Softmax is not the only activation function that operates on the vector level, but the rest (such as Sparsemax or Softmin) are similar enough and thus we won't be covering those.
 
 #### Rectified Linear Unit Layer (ReLU)
 This is the activation layer implementation that we'll be using for our hidden layers. It applies the rectified linear unit function element-wise,
@@ -169,9 +208,23 @@ ReLU(x) = (x)^{+} = max(0,x)
 ```
 
 ### Output Layer
-An output layer is the final step that generates a neural network's output (the prediction). It can be either an activation layer
-or a linear layer, and its type depends on the type of problem that the neural network is trying to solve.
+An output layer is the final step that generates a neural network's output (the prediction). It can be either a linear layer
+where no activation function is applied, or an activation layer (which is an easy way to implement a standalone activation function).
+Its type depends on the type of problem that the neural network is trying to solve.
 The output layer can sometimes be implemented as part of the loss function.
+
+| Problem Type | Output Layer | Shape | Typical Interpretation | Common Loss Function | Use Cases |
+| --- | --- | --- | --- | --- | --- |
+| Binary Classification | Sigmoid | 1 neuron | Probability of the positive class | Binary Cross-Entropy | Spam detection, medical test results, sentiment analysis |
+| Multi-Class Classification (Single Label) | Softmax | n neurons (1 per class) | Probability distribution over mutually exclusive classes | Categorical Cross-Entropy | Handwritten digit recognition, image classification, language identification |
+| Multi-Label Classification | Sigmoid (per output) | n neurons (1 per label) | Independent probability for each label | Binary Cross-Entropy | Tagging images with multiple objects, music genre classification, multi-topic text tagging |
+| Regression (Unbounded) | Linear (no activation) | 1+ neurons | Direct numeric prediction | MSE, MAE | Predicting house prices, forecasting stock prices, predicting temperature |
+| Regression (Bounded Range) | Sigmoid or Tanh | 1 neuron | Numeric prediction constrained to a range | MSE, MAE | Predicting normalized ratings, bounded physical measurements, probability estimates |
+| Ordinal Regression | Softmax or Sigmoid (special encoding) | n neurons | Ordered category prediction | Cross-Entropy with Ordinal encoding, MSE | Customer satisfaction rating, education level classification |
+| Probability Density Estimation | Softmax or Linear (with constraints) | Depends on bins or parameters | Outputs parameters of a distribution | NLL | Mixture density networks for trajectory prediction, speech synthesis |
+| Autoencoder Reconstruction | Sigmoid (normalized data) or Linear (raw data) | Same as input | Reconstructed input | MSE, Binary Cross-Entropy | Image denoising, dimensionality reduction, anomaly detection |
+| Generative Models (e.g. GAN) | Tanh or Sigmoid | Shape of generated sample | Generated data sample | Adversarial Loss | Image generation, super-resolution |
+| Language Models (next-token prediction) | Softmax | Vocabulary size | Probability distribution over next token | Cross-Entropy | Chatbots, text completion, machine translation |
 
 #### SoftMax Layer
 This is going to be the output layer of our neural network. Its purpose is to apply the softmax function, which
@@ -187,7 +240,7 @@ ensuring the resulting gradients will make sense.
 ## Loss Functions
 What follows is a mapping between various loss functions, their formulas and the type of predictions to which they can be applied.
 
-In our case, we're going to be using **Negative Log Likelihood**.
+In our case, we're going to be using **Cross-Entropy**.
 
 | Prediction Type | Loss Type | Loss Function | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Formula&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Notes |
 | --- | --- | :---: | --- | --- |
