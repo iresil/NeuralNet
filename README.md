@@ -53,16 +53,21 @@ The solution can be built using **Visual Studio 2022** and it contains 6 differe
 - **NeuralNet_Test**: Google Test project to ensure code correctness.
 
 ## Core Concepts
-- **Tensor**: Conceptually, a tensor is a container for numerical data. In our implementation, it also encapsulates the math that's
-  necessary for the neural network to operate.
-- **Input Layer**: The input layer is the first layer of a neural network, that receives raw input data. It typically doesn't transform
+- **Tensor**: Conceptually, a tensor is a container for numerical data (e.g. a scalar, a 1D vector, a 2D vector, etc.). In this
+  implementation, it also encapsulates the math that's necessary for the neural network to operate (e.g. elementwise addition,
+  algebraic product).
+- **Input Layer**: The input layer is the first layer of a neural network, and it receives raw input data. It typically doesn't transform
   the data and only passes it into the neural network, but sometimes preprocessing also happens either before or alongside it.
-- **Output Layer**: The output layer is the step that generates the final prediction.
+  In this implementation, it also flattens its input tensors into a 1D array.
+- **Output Layer**: The output layer is the last layer of a neural network, and it generates the final prediction. It can be either
+  a fully connected layer (i.e. a layer where each neuron receives input from all neurons of the previous layer), an activation layer (i.e.
+  implementation-wise, a wrapper for the activation function) or a combination of the two.
 - **Hidden Layer**: A hidden layer is any layer that is located between the input and output layers. It applies learned transformations
   to its input, to learn patterns that help the neural network make decisions. It is called "hidden" because its output is not directly
   observed.
-- **Neuron**: Conceptually, a neuron is the smallest computational unit contained in any layer. Its output is a scalar value.
-  In practice, we often refer to a neuron's output as a _neuron_, though technically that's the result of the neuron's computation.
+- **Neuron**: Conceptually, a neuron is the smallest computational unit contained in any layer. Its output is usually a scalar value
+  (e.g. in a layer that produces a vector of 10 elements as its output, each element will be produced by exactly one neuron). This is why
+  in practice, we often refer to a neuron's _output_ as a _neuron_, although technically that's the result of the neuron's computation.
 - **Loss Function**: This is what guides the learning process in neural networks. A loss function is what quantifies the difference
   between the model's predictions and the actual values, providing a scalar value that the optimizer seeks to minimize. The type of
   loss function that gets applied is selected based on the task at hand.
@@ -81,8 +86,17 @@ The solution can be built using **Visual Studio 2022** and it contains 6 differe
    so that in future iterations (i.e. epochs) the loss can be minimized.
 
 ## Tensor Operations
+The tensor class implemented here, apart from being a container for numerical data, also includes the definition of the basic mathematical
+calculations (elementwise addition and algebraic product) that will be executed on each tensor, during forward and backward passes.
+These are going to be the low-level building blocks of each neuron's computations.
 ### Automatic Differentiation (Autograd)
-#### Rules for Tensor Addition (Elementwise Addition)
+The calculations that are included in this tensor implementation will be used for automatic differentiation, i.e. for calculating
+derivatives by breaking them down to smaller derivative calculations, whose results are known. The chain rule from calculus is used
+here, and there are two possible modes:
+- **Forward**: Moving from inputs to outputs, tracking both the output and the derivative at each step.
+- **Reverse**: Moving from outputs back to inputs separately, accumulating gradients. This is more efficient for many inputs but few
+  outputs, which is why it's most often used in deep learning. It is also what we're going to be using.
+#### Rules for Reverse Tensor Addition (Elementwise Addition)
 | Forward Type | Who Broadcast? | Who Gets Gradient Summed? | Notes |
 | --- | :---: | --- | --- |
 | Scalar + Scalar | Neither | No summing needed | |
@@ -95,7 +109,7 @@ The solution can be built using **Visual Studio 2022** and it contains 6 differe
 | 2D + 1D | 1D | 1D (Sum over rows) | Not implemented, Covered by (2D&#8594;1D) + 1D |
 | 2D + 2D | Neither | No summing needed | |
 
-#### Rules for Tensor Multiplication (Algebraic Product - MatMul)
+#### Rules for Reverse Tensor Multiplication (Algebraic Product - MatMul)
 | Forward Type | Forward Result | Who Broadcast? | Who Gets Gradient Summed? | Notes |
 | --- | :---: | :---: | --- | --- |
 | 1D &#183; 1D | Scalar | Neither | No summing needed | Classic dot product (Sum over element-wise multiplication) |
@@ -105,7 +119,7 @@ The solution can be built using **Visual Studio 2022** and it contains 6 differe
 
 ## Layers
 ### Input Layer
-An input layer is the first step that provides the neural network with its data inputs. Its type depends on the way that the neural network's
+An input layer is the gateway that allows incoming data to enter the neural network. Its type depends on the way that the neural network's
 input data has been structured.
 
 | Input Layer Type | Data Type | Typical Use Case | Notes |
@@ -122,11 +136,11 @@ input data has been structured.
 | Custom | Mixed or structured data | Multimodal models (e.g. combining text and images) | Can be tailored to specific architectures |
 
 #### Flatten Layer
-This is the input layer that we're using in our implementation. It is typically used for transitioning from spatial data (e.g. images) to
-linear layers. It reshapes its inputs into flat vectors, which will then be passed as input to the linear layers.
+This is the input layer that we'll be using in this implementation. It is typically used for reshaping its inputs (e.g. images) into flat vectors,
+which will then be passed as input to the next layer.
 
 ### Hidden Layer
-A hidden layer is located "inside" the neural network (i.e. does not directly receive data from the outside world or provide predictions to it).
+A hidden layer is located "inside" the neural network (i.e. it does not directly receive data from the outside world or provide predictions to it).
 It transforms its inputs into a different form to enable learning. Its type depends on the type of problem that the neural network is trying
 to solve.
 
@@ -144,11 +158,11 @@ to solve.
 | Batch Normalization | Stabilizing training | Any deep network | Normalizes activations to reduce internal covariate shift (auxiliary/regularization layer) |
 | Dropout | Regularization | Preventing overfitting in any model | Randomly disables neurons during training to improve generalization (auxiliary/regularization layer) |
 
-#### Linear (Fully Connected) Layer
-The fully connected (or dense) layer is the code that applies a _learnable affine transformation_ to its inputs. An affine transformation
+#### Fully Connected Layer
+The fully connected (or dense) layer is the linear layer that applies a _learnable affine transformation_ to its inputs. An affine transformation
 is just a linear transformation (matrix multiplication) followed by a translation (the addition of a bias vector). In geometry, these
 operations preserve points, straight lines, and planes (i.e. they maintain "affine structure"). Specifically in neural networks, the weight
-and bias parameters are not fixed. The model learns them by minimizing a loss function during training, using backpropagation and gradient
+and bias parameters are not fixed. The model _learns_ them by minimizing a loss function during training, using backpropagation and gradient
 descent. So, the transformation is learnable, because the neural network tunes weight and bias to fit the data.
 
 When defining a dense layer, knowing the number of input and output features is necessary. The number of input features is the number of
@@ -166,7 +180,7 @@ y = W \cdot x + b
 - $`W`$: Weight of shape `[output_dim, input_dim]` (learnable parameter, updated during training)
 - $`b`$: Bias vector of shape `[output_dim]` (learnable parameter, updated during training)
 
-### Activation Layer
+#### Activation Layer
 Because executing multiple linear transformations one after the other would just lead to a different linear transformation, applying
 activation functions is necessary, to introduce nonlinearity to the neural network. This helps the neural network identify and represent complex
 patterns or relationships in the data.
@@ -176,7 +190,7 @@ It can be used as either a **hidden** layer or the **output** layer and technica
 (for example, it can be used after convolutional layers).
 
 Activation functions can either be applied element-wise (i.e. pointwise) or vector-level:
-- **element-wise**: Each output only depends on its own input, and so ensures no interaction between elements. This is the default choice for _most_ hidden layers.
+- **element-wise**: Each output only depends on its own input, and thus ensures no interaction between elements. This is the default choice for _most_ hidden layers.
 - **vector-level**: Each output also depends on the whole vector, and may enforce constraints or introduce competition and cooperation between elements.
   Can be used for probabilities, rankings or normalized weights.
 
@@ -192,12 +206,12 @@ Some of the most common activation functions are the following:
 | ELU | $`\text{ELU}(x) = \begin{cases} x & x > 0 \\ \alpha(e^x - 1) & x \le 0 \end{cases}`$ | Element | $`(-\alpha, \infty)`$ | Exponential Linear Unit; like Leaky ReLU, but with exponential curve; can speed up learning |
 | Softplus | $`\text{Softplus}(x) = \ln(1 + e^x)`$ | Element | $`(0, \infty)`$ | Smooth approximaton of ReLU; always positive and differentiable everywhere; avoids the "dead neuron" problem |
 
-For hidden layers, GELU, Swish and Mish are increasing in popularity, but we won't be covering those here.
+In the context of hidden layers, GELU, Swish and Mish are also increasing in popularity, but we won't be covering those here.
 
-Softmax is not the only activation function that operates on the vector level, but the rest (such as Sparsemax or Softmin) are similar enough and thus we won't be covering those.
+Softmax is not the only activation function that operates on the vector level, but the rest (such as Sparsemax or Softmin) are similar enough and thus we won't be covering them.
 
-#### Rectified Linear Unit Layer (ReLU)
-This is the activation layer implementation that we'll be using for our hidden layers. It applies the rectified linear unit function element-wise,
+##### Rectified Linear Unit Layer (ReLU)
+This is the activation layer implementation that we'll be using for the hidden layers. It applies the rectified linear unit function element-wise,
 essentially removing all negative values from its input tensor.
 ```mermaid
 xychart-beta
@@ -209,9 +223,9 @@ ReLU(x) = (x)^{+} = max(0,x)
 
 ### Output Layer
 An output layer is the final step that generates a neural network's output (the prediction). It can be either a linear layer
-where no activation function is applied, or an activation layer (which is an easy way to implement a standalone activation function).
-Its type depends on the type of problem that the neural network is trying to solve.
-The output layer can sometimes be implemented as part of the loss function.
+(in cases when no activation function is applied), or an activation layer (which is an easy way to implement a standalone
+activation function). Its type depends on the type of problem that the neural network is trying to solve.
+The output layer may sometimes be implemented as part of the loss function.
 
 | Problem Type | Output Layer | Shape | Typical Interpretation | Common Loss Function | Use Cases |
 | --- | --- | --- | --- | --- | --- |
@@ -227,7 +241,7 @@ The output layer can sometimes be implemented as part of the loss function.
 | Language Models (next-token prediction) | Softmax | Vocabulary size | Probability distribution over next token | Cross-Entropy | Chatbots, text completion, machine translation |
 
 #### SoftMax Layer
-This is going to be the output layer of our neural network. Its purpose is to apply the softmax function, which
+This is going to be the output layer of this neural network implementation. Its purpose is to apply the softmax function, which
 converts raw scores (logits) into probabilities and ensures the normalization of the model's outputs (commonly used in multi-class
 classification, where outputs sum to 1 across classes).
 
@@ -240,7 +254,7 @@ ensuring the resulting gradients will make sense.
 ## Loss Functions
 What follows is a mapping between various loss functions, their formulas and the type of predictions to which they can be applied.
 
-In our case, we're going to be using **Cross-Entropy**.
+In this case, we're going to be using **Cross-Entropy** loss.
 
 | Prediction Type | Loss Type | Loss Function | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Formula&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Notes |
 | --- | --- | :---: | --- | --- |
@@ -258,7 +272,7 @@ In our case, we're going to be using **Cross-Entropy**.
 ## Optimizer Types
 What follows is a brief description of the most commonly used types of optimizers in neural network training.
 
-In our case, we're going to be using **Stochastic Gradient Descent**.
+In this case, we're going to be using a **Stochastic Gradient Descent** optimizer.
 
 | Optimizer | Description | Key Features / Notes |
 | --- | --- | --- |
@@ -277,7 +291,7 @@ In our case, we're going to be using **Stochastic Gradient Descent**.
 
 ## Training Sets
 ### MNIST Dataset Structure
-To train our model, we're going to be using the MNIST and FashionMNIST datasets. Each of these datasets is structured as a set of:
+To train our model, we're going to be using the **MNIST** and **FashionMNIST** datasets. Each of these datasets is structured as a set of:
 - Training Images
 - Training Labels
 - Testing Images
@@ -295,12 +309,15 @@ packet-beta
 ```
 ### Endianness
 The numbers stored in MNIST files are in big-endian format (most significant byte first).
-Conversely, most modern hardware stores numbers in little-endian format.
+Conversely, most modern hardware, stores numbers in little-endian format (least significant byte first).
 Since this repository contains code that's supposed to run on Windows (and no version of Windows released so far runs on big-endian architectures),
 we can be certain that when reading the file we're going to interpret the raw bytes in little-endian format, thus reversing the stored number.
-This is why we need to reverse the number back, so that we can interpret it correctly (i.e. most significant byte first).
+This is why, after reading, we need to reverse the number back, so that we can interpret it correctly (i.e. most significant byte first).
 
 ## Model Serialization
+The model's parameters (its saved state) are stored in a compact, binary format. A unique "magic number" at the start of the file is used
+for format identification, preventing attempts to load incompatible files. Each learned weight is identified by its size, name, dimensions and
+actual elements. Variable-length fields allow for the flexible storage of information, enabling efficient saving and loading of model weights.
 ### Stored Byte Sizes
 ```mermaid
 packet-beta
@@ -321,11 +338,11 @@ packet-beta
 ```
 
 ## Not Implemented
-- **Data Augmentation**: The training data is not transformed in any way. Images are not rotated, flipped or scaled.
-  This would help the trained model generalize better and not overfit, but image processing is a domain on its own,
-  and can be decoupled completely from this project.
+- **Data Augmentation**: The training data is not transformed in any way (apart from its conversion to numerical vectors).
+  Images are not rotated, flipped or scaled. This would help the trained model generalize better and not overfit, but
+  image processing is an entire domain on its own, and can be decoupled completely from this project.
 - **Gradient Clipping**: The magnitude of gradients during backpropagation is not constrained in any way. This is
-  because our neural network is neither recurrent (i.e. the order of inputs doesn't matter), nor very deep, so
-  exploding gradients are unlikely.
+  because the implemented neural network is neither recurrent (i.e. the order of inputs doesn't matter), nor very deep,
+  so exploding gradients are unlikely.
 - **Early Stopping**: The training process doesn't halt as soon as performance stops improving. This could be useful
-  in our case, and might be implemented in the future.
+  for this project, and might be implemented in the future.
