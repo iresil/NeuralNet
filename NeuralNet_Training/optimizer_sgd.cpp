@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "optimizer_sgd.h"
 #include <cstddef>
+#include <execution>
 #include "../NeuralNet_Core/tensor.h"
 
 SGD::SGD(std::vector<std::pair<std::string, std::shared_ptr<Tensor>>> params, float lr) :
@@ -10,10 +11,13 @@ void SGD::step()
 {
     for (auto &param : _params)
     {
-        for (std::size_t i = 0; i < param.second->count(); i++)
-        {
-            param.second->data()[i] -= _learning_rate * param.second->grad()[i];
-        }
+        std::transform(std::execution::par, param.second->data().begin(), param.second->data().end(),
+            param.second->grad().begin(), param.second->data().begin(),
+            [lr = _learning_rate](auto data_val, auto grad_val)
+            {
+                return data_val - lr * grad_val;
+            }
+        );
     }
 }
 
