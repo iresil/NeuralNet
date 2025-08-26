@@ -1,5 +1,5 @@
 # NeuralNet
-### A basic neural network built from scratch using C++.
+### A basic neural network built from scratch using C++
 
 > [!NOTE]
 > This code was based on the [How to Build a Neural Network from Scratch in C++](https://www.youtube.com/watch?v=BTkIWUupQpk&list=PLrx64D7mZoumaIfuqpzvXgP2okdFXr2ol&index=1) series.
@@ -30,6 +30,10 @@ Some of these changes are:
     - Optimized compile times by using forward declarations (e.g. `class Tensor;`) where includes were unnecessary.
     - Optimized compile times by using precompiled headers for libraries that are used across multiple classes, or are particularly heavy.
     - Reduced training times by adding a degree of parallelism.
+
+> :heavy_check_mark: $${\color{green}\large\textsf{Performance Improvement}}$$
+> 
+> Observed at **96.5%**, after applying the optimizations mentioned above.
 
 > [!NOTE]
 > The decision to use Visual Studio instead of CMake can also have the following drawbacks, which were considered
