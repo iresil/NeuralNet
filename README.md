@@ -31,7 +31,7 @@ Some of these changes are:
     - Optimized compile times by using precompiled headers for libraries that are used across multiple classes, or are particularly heavy.
     - Reduced training times by adding a degree of parallelism.
 
-> :heavy_check_mark: $${\color{green}\large\textsf{Performance Improvement}}$$
+> :white_check_mark: $${\color{green}\large\textsf{Performance Improvement}}$$
 > 
 > Observed at **96.5%**, after applying the optimizations mentioned above.
 
