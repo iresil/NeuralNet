@@ -16,7 +16,7 @@ namespace LossTests
 
         EXPECT_EQ(loss->shape().size(), 0);
         EXPECT_FALSE(loss->requires_grad());
-        EXPECT_NEAR(loss->item(), -std::log(0.7f), 1e-6);
+        EXPECT_NEAR(loss->item(), -std::log(0.7f), 1e-6f);
     }
 
     TEST(NLL, Near_Zero_Probability_Clamped)
@@ -28,7 +28,7 @@ namespace LossTests
         std::size_t target = 0;
         std::shared_ptr<Tensor> loss = nll_loss(input, target);
 
-        EXPECT_NEAR(loss->item(), -std::log(1e-12f), 1e-6);
+        EXPECT_NEAR(loss->item(), -std::log(1e-12f), 1e-6f);
     }
 
     TEST(NLL, Backward)
@@ -47,7 +47,7 @@ namespace LossTests
         ASSERT_EQ(input->grad().size(), 3);
         EXPECT_FLOAT_EQ(input->grad()[0], 0.0f);
         EXPECT_FLOAT_EQ(input->grad()[1], 0.0f);
-        EXPECT_NEAR(input->grad()[2], -1.0f / 0.7f, 1e-6);
+        EXPECT_NEAR(input->grad()[2], -1.0f / 0.7f, 1e-6f);
     }
 
     TEST(NLL, Error)
@@ -94,7 +94,7 @@ namespace LossTests
 
         EXPECT_EQ(loss->shape().size(), 0);
         EXPECT_FALSE(loss->requires_grad());
-        EXPECT_NEAR(loss->item(), 0.40761f, 1e-5);
+        EXPECT_NEAR(loss->item(), 0.40761f, 1e-5f);
     }
 
     TEST(CrossEntropy, Backward)
@@ -111,9 +111,9 @@ namespace LossTests
         loss->backward();
 
         ASSERT_EQ(input->grad().size(), 3);
-        EXPECT_NEAR(input->grad()[0], 0.09003f, 1e-5);
-        EXPECT_NEAR(input->grad()[1], 0.24473f, 1e-5);
-        EXPECT_NEAR(input->grad()[2], -0.33476f, 1e-5);
+        EXPECT_NEAR(input->grad()[0], 0.09003f, 1e-5f);
+        EXPECT_NEAR(input->grad()[1], 0.24473f, 1e-5f);
+        EXPECT_NEAR(input->grad()[2], -0.33476f, 1e-5f);
     }
 
     TEST(CrossEntropy, Error)

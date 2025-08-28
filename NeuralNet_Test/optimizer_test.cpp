@@ -21,7 +21,7 @@ namespace OptimizerTests
         NeuralNetwork network(reg, config);
         auto params = network.parameters();
 
-        std::shared_ptr<Tensor> input = std::make_shared<Tensor>(std::vector<float>(5, 1.0f));
+        std::shared_ptr<Tensor> input = std::make_shared<Tensor>(std::vector<float>(5.0f, 1.0f));
 
         // Copy linear weight
         std::vector<std::vector<float>> copy_linear_weight(params[0].second->shape()[0], std::vector<float>(params[0].second->shape()[1]));
@@ -69,24 +69,21 @@ namespace OptimizerTests
         if ((*params[0].second).grad()[1] == 0)
         {
             float new_weight = (*params[0].second)(0, 1);
-            EXPECT_FLOAT_EQ(new_weight, copy_linear_weight[0][1])
-                << "Weight changed despite zero gradient";
+            EXPECT_FLOAT_EQ(new_weight, copy_linear_weight[0][1]) << "Weight changed despite zero gradient";
         }
 
         // If gradient is > 0, weight should have decreased
         if ((*params[0].second).grad()[0] > 0)
         {
             float updated_weight = (*params[0].second)(0, 0);
-            EXPECT_LT(updated_weight, copy_linear_weight[0][0])
-                << "Weight not updated correctly for non-zero grad";
+            EXPECT_LT(updated_weight, copy_linear_weight[0][0]) << "Weight not updated correctly for non-zero grad";
         }
 
         sgd.zero_grad();
 
         for (size_t i = 0; i < params[0].second->count(); i++)
         {
-            EXPECT_FLOAT_EQ((*params[0].second).grad()[i], 0.0f)
-                << "Gradient not reset to 0 at index " << i;
+            EXPECT_FLOAT_EQ((*params[0].second).grad()[i], 0.0f) << "Gradient not reset to 0 at index " << i;
         }
     }
 }

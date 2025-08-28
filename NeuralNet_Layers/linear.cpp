@@ -5,8 +5,8 @@
 
 Linear::Linear(std::size_t in_features, std::size_t out_features, std::size_t seed) :
     _in_features(in_features), _out_features(out_features),
-    _weight(std::make_shared<Tensor>(std::vector<std::vector<float>>(in_features, std::vector<float>(out_features, 0)), true)),
-    _bias(std::make_shared<Tensor>(std::vector<float>(out_features, 0), true)), _seed(seed)
+    _weight(std::make_shared<Tensor>(std::vector<std::vector<float>>(in_features, std::vector<float>(out_features, 0.0f)), true)),
+    _bias(std::make_shared<Tensor>(std::vector<float>(out_features, 0.0f), true)), _seed(seed)
 {
     register_parameter("weight", _weight);
     register_parameter("bias", _bias);

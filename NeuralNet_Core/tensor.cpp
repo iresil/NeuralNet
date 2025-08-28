@@ -284,7 +284,7 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
                 // Because a scalar is added to a vector, the scalar was broadcast during forward pass.
                 // When a scalar is broadcast forward, its gradient must be the sum of all gradients from the broadcasted elements.
                 // The vector receives grad_output directly because it wasn't broadcast.
-                float grad_self = 0;
+                float grad_self = 0.0f;
                 std::size_t count_i = grad_output.size();
                 for (std::size_t i = 0; i < count_i; i++)
                 {
@@ -326,7 +326,7 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
                 // Because a scalar is added to a vector, the scalar was broadcast during forward pass.
                 // When a scalar is broadcast forward, its gradient must be the sum of all gradients from the broadcasted elements.
                 // The vector receives grad_output directly because it wasn't broadcast.
-                float grad_self = 0;
+                float grad_self = 0.0f;
                 std::size_t count_i = grad_output.size();
                 for (std::size_t i = 0; i < count_i; i++)
                 {
@@ -360,7 +360,7 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
                 // Because a scalar is added to a vector, the scalar was broadcast during forward pass.
                 // When a scalar is broadcast forward, its gradient must be the sum of all gradients from the broadcasted elements.
                 // The vector receives grad_output directly because it wasn't broadcast.
-                float grad_other = 0;
+                float grad_other = 0.0f;
                 std::size_t count_i = grad_output.size();
                 for (std::size_t i = 0; i < count_i; i++)
                 {
@@ -402,7 +402,7 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
                 // Because a scalar is added to a vector, the scalar was broadcast during forward pass.
                 // When a scalar is broadcast forward, its gradient must be the sum of all gradients from the broadcasted elements.
                 // The vector receives grad_output directly because it wasn't broadcast.
-                float grad_other = 0;
+                float grad_other = 0.0f;
                 std::size_t count_i = grad_output.size();
                 for (std::size_t i = 0; i < count_i; i++)
                 {
@@ -503,7 +503,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
 
     if (_shape.size() == 1 && other->shape().size() == 1)  // Dot Product: 1D x 1D -> float
     {
-        float result = 0;
+        float result = 0.0f;
         std::size_t count_i = _shape[0];
         for (std::size_t i = 0; i < count_i; i++)
         {
@@ -544,7 +544,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
         std::iota(indices_i.begin(), indices_i.end(), 0);
         std::for_each(std::execution::par, indices_i.begin(), indices_i.end(), [&](std::size_t i)
         {
-            float result_i = 0;
+            float result_i = 0.0f;
             for (std::size_t j = 0; j < count_j; j++)
             {
                 result_i += operator()(i, j) * other->operator()(j);
@@ -581,7 +581,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
                 std::iota(indices_i_other.begin(), indices_i_other.end(), 0);
                 std::for_each(std::execution::par, indices_i_other.begin(), indices_i_other.end(), [&](std::size_t i)
                 {
-                    float grad_other_i = 0;
+                    float grad_other_i = 0.0f;
                     for (std::size_t j = 0; j < count_j; j++)
                     {
                         grad_other_i += self->operator()(j, i) * grad_output[j];
@@ -606,7 +606,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
         std::iota(indices_i.begin(), indices_i.end(), 0);
         std::for_each(std::execution::par, indices_i.begin(), indices_i.end(), [&](std::size_t i)
         {
-            float result_i = 0;
+            float result_i = 0.0f;
             for (std::size_t j = 0; j < count_j; j++)
             {
                 result_i += operator()(j) * other->operator()(j, i);
@@ -627,7 +627,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
                 std::iota(indices_i.begin(), indices_i.end(), 0);
                 std::for_each(std::execution::par, indices_i.begin(), indices_i.end(), [&](std::size_t i)
                 {
-                    float grad_self_i = 0;
+                    float grad_self_i = 0.0f;
                     for (std::size_t j = 0; j < count_j; j++)
                     {
                         grad_self_i += other->operator()(i, j) * grad_output[j];
@@ -674,7 +674,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
         {
             std::for_each(std::execution::par, indices_j.begin(), indices_j.end(), [&](std::size_t j)
             {
-                float result_i_j = 0;
+                float result_i_j = 0.0f;
                 for (std::size_t k = 0; k < count_k; k++)
                 {
                     result_i_j += operator()(i, k) * other->operator()(k, j);
@@ -703,7 +703,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
                 {
                     std::for_each(std::execution::par, indices_j.begin(), indices_j.end(), [&](std::size_t j)
                     {
-                        float grad_self_i_j = 0;
+                        float grad_self_i_j = 0.0f;
                         for (std::size_t k = 0; k < count_k; k++)
                         {
                             grad_self_i_j += other->operator()(j, k) * grad_output[i * count_k + k];
@@ -725,7 +725,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
                 {
                     std::for_each(std::execution::par, indices_j_other.begin(), indices_j_other.end(), [&](std::size_t j)
                     {
-                        float grad_other_i_j = 0;
+                        float grad_other_i_j = 0.0f;
                         for (std::size_t k = 0; k < count_k_other; k++)
                         {
                             grad_other_i_j += self->operator()(k, i) * grad_output[k * count_j_other + j];
