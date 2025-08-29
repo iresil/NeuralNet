@@ -31,9 +31,17 @@ Some of these changes are:
     - Optimized compile times by using precompiled headers for libraries that are used across multiple classes, or are particularly heavy.
     - Reduced training times by adding a degree of parallelism.
 
-> :white_check_mark: $${\color{green}\large\textsf{Performance Improvement}}$$
+> :white_check_mark: $${\color{green}\large\textsf{Performance Improvements}}$$
 > 
-> Observed at **96.5%**, after applying the optimizations mentioned above.
+> **Per Stage**:
+> - Dataset Loading: $${\color{green}\textbf{95.4\\%}}$$
+> - Forward Pass: $${\color{green}\textbf{93.7\\%}}$$
+> - Backward Pass: $${\color{green}\textbf{96.5\\%}}$$
+> - Optimizer Step: $${\color{green}\textbf{8.7\\%}}$$
+> 
+> **Per Process**:
+> - Training Total: $${\color{green}\textbf{89.2\\%}}$$
+> - Inference Total: $${\color{green}\textbf{83.3\\%}}$$
 
 > [!NOTE]
 > The decision to use Visual Studio instead of CMake can also have the following drawbacks, which were considered
