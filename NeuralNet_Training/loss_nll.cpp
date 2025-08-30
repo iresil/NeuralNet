@@ -21,7 +21,7 @@ std::shared_ptr<Tensor> NLL::forward(std::shared_ptr<Tensor> input, std::size_t 
     if (input->requires_grad())
     {
         std::vector<std::shared_ptr<Tensor>> parents{ input };
-        std::function<void (const std::vector<float> &)> gradfn = [input, target](const std::vector<float> &grad_output)
+        std::function<void (const std::vector<float>&)> gradfn = [input, target](const std::vector<float> &grad_output)
         {
             std::vector<float> grad_input;
             for (std::size_t i = 0; i < input->count(); i++)

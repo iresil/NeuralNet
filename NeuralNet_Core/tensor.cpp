@@ -1,6 +1,26 @@
 #include "pch.h"
 #include "tensor.h"
+#include <map>
 #include "tensor_operations.h"
+
+std::map<std::pair<std::size_t, std::size_t>, Tensor::AddOperation> addition_operations =
+{
+    { { 0, 0 }, { TensorOperations::add_scalar_scalar, TensorOperations::add_scalar_scalar_reverse } },
+    { { 0, 1 }, { TensorOperations::add_scalar_1D, TensorOperations::add_scalar_1D_reverse } },
+    { { 0, 2 }, { TensorOperations::add_scalar_2D, TensorOperations::add_scalar_2D_reverse } },
+    { { 1, 0 }, { TensorOperations::add_1D_scalar, TensorOperations::add_1D_scalar_reverse } },
+    { { 2, 0 }, { TensorOperations::add_2D_scalar, TensorOperations::add_2D_scalar_reverse } },
+    { { 1, 1 }, { TensorOperations::add_1D_1D, TensorOperations::add_1D_1D_reverse } },
+    { { 2, 2 }, { TensorOperations::add_2D_2D, TensorOperations::add_2D_2D_reverse } }
+};
+
+std::map<std::pair<std::size_t, std::size_t>, Tensor::MultOperation> multiplication_operations =
+{
+    { { 1, 1 }, { TensorOperations::mult_1D_1D, TensorOperations::mult_1D_1D_reverse } },
+    { { 2, 1 }, { TensorOperations::mult_2D_1D, TensorOperations::mult_2D_1D_reverse } },
+    { { 1, 2 }, { TensorOperations::mult_1D_2D, TensorOperations::mult_1D_2D_reverse } },
+    { { 2, 2 }, { TensorOperations::mult_2D_2D, TensorOperations::mult_2D_2D_reverse } }
+};
 
 Tensor::Tensor(float data, bool requires_grad,
                std::function<void(const std::vector<float>&)> gradfn,
@@ -65,6 +85,15 @@ Tensor::Tensor(std::vector<std::vector<float>> data, bool requires_grad,
     {
         zero_grad();
     }
+}
+
+void Tensor::make_with_grad(bool requires_grad, std::vector<std::shared_ptr<Tensor>> parents,
+                            std::function<void(const std::vector<float>&)> gradfn)
+{
+    _requires_grad = requires_grad;
+    _parents = parents;
+    _gradfn = gradfn;
+    zero_grad();
 }
 
 const std::vector<std::size_t> &Tensor::shape() const { return _shape; }
@@ -243,125 +272,38 @@ float &Tensor::operator()(std::size_t i, std::size_t j)
     return _get_item<Tensor>(*this, i, j);
 }
 
+std::shared_ptr<Tensor> Tensor::create_tensor_with_grad(std::shared_ptr<Tensor> result, std::shared_ptr<Tensor> self,
+                                                        std::shared_ptr<Tensor> other, GradFunc backward)
+{
+    std::vector<std::shared_ptr<Tensor>> parents{ self, other };
+    std::function<void(const std::vector<float>&)> gradfn = [self, other, backward](const std::vector<float> &grad_output)
+    {
+        backward(self, other, grad_output);
+    };
+
+    result->make_with_grad(true, parents, gradfn);
+
+    return result;
+}
+
 std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
 {
-    if (_shape.size() == 0 && other->shape().size() == 0)  // Scalar + Scalar
+    std::pair<std::size_t, std::size_t> key = std::make_pair(_shape.size(), other->shape().size());
+    auto it = addition_operations.find(key);
+    if (it == addition_operations.end())
     {
-        float result = TensorOperations::add_scalar_scalar(shared_from_this(), other);
-        if (_requires_grad || other->requires_grad())
-        {
-            std::shared_ptr<Tensor> self = shared_from_this();
-            std::vector<std::shared_ptr<Tensor>> parents { self, other };
-            std::function<void(const std::vector<float>&)> gradfn = [self, other](const std::vector<float> &grad_output)
-            {
-                TensorOperations::add_scalar_scalar_reverse(self, other, grad_output);
-            };
-            return std::make_shared<Tensor>(result, true, gradfn, parents);
-        }
-        return std::make_shared<Tensor>(result);
+        throw std::invalid_argument("Unsupported shape combination");
     }
-    else if (_shape.size() == 0 && other->shape().size() == 1)  // Scalar + 1D
-    {
-        std::vector<float> result = TensorOperations::add_scalar_1D(shared_from_this(), other);
-        if (_requires_grad || other->requires_grad())
-        {
-            std::shared_ptr<Tensor> self = shared_from_this();
-            std::vector<std::shared_ptr<Tensor>> parents { self, other };
-            std::function<void(const std::vector<float>&)> gradfn = [self, other](const std::vector<float> &grad_output)
-            {
-                TensorOperations::add_scalar_1D_reverse(self, other, grad_output);
-            };
-            return std::make_shared<Tensor>(result, true, gradfn, parents);
-        }
-        return std::make_shared<Tensor>(result);
-    }
-    else if (_shape.size() == 0 && other->shape().size() == 2)  // Scalar + 2D
-    {
-        std::vector<std::vector<float>> result = TensorOperations::add_scalar_2D(shared_from_this(), other);
-        if (_requires_grad || other->requires_grad())
-        {
-            std::shared_ptr<Tensor> self = shared_from_this();
-            std::vector<std::shared_ptr<Tensor>> parents { self, other };
-            std::function<void(const std::vector<float>&)> gradfn = [self, other](const std::vector<float> &grad_output)
-            {
-                TensorOperations::add_scalar_2D_reverse(self, other, grad_output);
-            };
-            return std::make_shared<Tensor>(result, true, gradfn, parents);
-        }
-        return std::make_shared<Tensor>(result);
-    }
-    else if (_shape.size() == 1 && other->shape().size() == 0)  // 1D + Scalar
-    {
-        std::vector<float> result = TensorOperations::add_1D_scalar(shared_from_this(), other);
-        if (_requires_grad || other->requires_grad())
-        {
-            std::shared_ptr<Tensor> self = shared_from_this();
-            std::vector<std::shared_ptr<Tensor>> parents { self, other };
-            std::function<void(const std::vector<float>&)> gradfn = [self, other](const std::vector<float> &grad_output)
-            {
-                TensorOperations::add_1D_scalar_reverse(self, other, grad_output);
-            };
-            return std::make_shared<Tensor>(result, true, gradfn, parents);
-        }
-        return std::make_shared<Tensor>(result);
-    }
-    else if (_shape.size() == 2 && other->shape().size() == 0)  // 2D + Scalar
-    {
-        std::vector<std::vector<float>> result = TensorOperations::add_2D_scalar(shared_from_this(), other);
-        if (_requires_grad || other->requires_grad())
-        {
-            std::shared_ptr<Tensor> self = shared_from_this();
-            std::vector<std::shared_ptr<Tensor>> parents { self, other };
-            std::function<void(const std::vector<float>&)> gradfn = [self, other](const std::vector<float> &grad_output)
-            {
-                TensorOperations::add_2D_scalar_reverse(self, other, grad_output);
-            };
-            return std::make_shared<Tensor>(result, true, gradfn, parents);
-        }
-        return std::make_shared<Tensor>(result);
-    }
-    else if (_shape.size() == 1 && other->shape().size() == 1 && _shape[0] == other->shape()[0])  // 1D + 1D
-    {
-        std::vector<float> result = TensorOperations::add_1D_1D(shared_from_this(), other);
-        if (_requires_grad || other->requires_grad())
-        {
-            std::shared_ptr<Tensor> self = shared_from_this();
-            std::vector<std::shared_ptr<Tensor>> parents { self, other };
-            std::function<void(const std::vector<float>&)> gradfn = [self, other](const std::vector<float> &grad_output)
-            {
-                TensorOperations::add_1D_1D_reverse(self, other, grad_output);
-            };
-            return std::make_shared<Tensor>(result, true, gradfn, parents);
-        }
-        return std::make_shared<Tensor>(result);
-    }
-    else if (_shape.size() == 2 && other->shape().size() == 2 && _shape[0] == other->shape()[0])  // 2D + 2D
-    {
-        if (_shape[1] != other->shape()[1])
-        {
-            throw std::invalid_argument("Second dimensions are not equal");
-        }
 
-        std::vector<std::vector<float>> result = TensorOperations::add_2D_2D(shared_from_this(), other);
-        if (_requires_grad || other->requires_grad())
-        {
-            std::shared_ptr<Tensor> self = shared_from_this();
-            std::vector<std::shared_ptr<Tensor>> parents{ self, other };
-            std::function<void(const std::vector<float>&)> gradfn = [self, other](const std::vector<float> &grad_output)
-            {
-                TensorOperations::add_2D_2D_reverse(self, other, grad_output);
-            };
-            return std::make_shared<Tensor>(result, true, gradfn, parents);
-        }
-        return std::make_shared<Tensor>(result);
-    }
-    else
+    std::shared_ptr<Tensor> self = shared_from_this();
+    std::shared_ptr<Tensor> result = it->second.forward(self, other);
+
+    if (_requires_grad || other->requires_grad())
     {
-        if (_shape[0] != other->shape()[0])
-        {
-            throw std::invalid_argument("First dimensions are not equal");
-        }
+        return create_tensor_with_grad(result, self, other, it->second.backward);
     }
+
+    return result;
 }
 
 std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
@@ -370,75 +312,28 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
     {
         throw std::invalid_argument("Both arguments need to be at least 1D for matrix multiplication");
     }
-    if (_shape[_shape.size() - 1] != other->shape()[0])
+
+    if (_shape.back() != other->shape().front())
     {
-        throw std::invalid_argument("Last dimension of the first tensor doesn't have the same size as the first dimension of the second");
+        throw std::invalid_argument("Shape mismatch: incompatible dimensions for multiplication");
     }
 
-    if (_shape.size() == 1 && other->shape().size() == 1)  // Dot Product: 1D x 1D -> float
+    std::pair<std::size_t, std::size_t> key = std::make_pair(_shape.size(), other->shape().size());
+    auto it = multiplication_operations.find(key);
+    if (it == multiplication_operations.end())
     {
-        float result = TensorOperations::mult_1D_1D(shared_from_this(), other);
-        if (_requires_grad || other->requires_grad())
-        {
-            std::shared_ptr<Tensor> self = shared_from_this();
-            std::vector<std::shared_ptr<Tensor>> parents{ self, other };
-            std::function<void(const std::vector<float>&)> gradfn = [self, other](const std::vector<float> &grad_output)
-            {
-                TensorOperations::mult_1D_1D_reverse(self, other, grad_output);
-            };
-            return std::make_shared<Tensor>(result, true, gradfn, parents);
-        }
-        return std::make_shared<Tensor>(result);
+        throw std::invalid_argument("Unsupported shape combination for multiplication");
     }
-    else if (_shape.size() == 2 && other->shape().size() == 1)  // Matrix-Vector Product: 2D x 1D -> 1D
+
+    std::shared_ptr<Tensor> self = shared_from_this();
+    std::shared_ptr<Tensor> result = it->second.forward(self, other);
+
+    if (_requires_grad || other->requires_grad())
     {
-        std::vector<float> result = TensorOperations::mult_2D_1D(shared_from_this(), other);
-        if (_requires_grad || other->requires_grad())
-        {
-            std::shared_ptr<Tensor> self = shared_from_this();
-            std::vector<std::shared_ptr<Tensor>> parents{ self, other };
-            std::function<void(const std::vector<float>&)> gradfn = [self, other](const std::vector<float> &grad_output)
-            {
-                TensorOperations::mult_2D_1D_reverse(self, other, grad_output);
-            };
-            return std::make_shared<Tensor>(result, true, gradfn, parents);
-        }
-        return std::make_shared<Tensor>(result);
+        return create_tensor_with_grad(result, self, other, it->second.backward);
     }
-    else if (_shape.size() == 1 && other->shape().size() == 2)  // Vector-Matrix Product: 1D x 2D -> 1D
-    {
-        std::vector<float> result = TensorOperations::mult_1D_2D(shared_from_this(), other);
-        if (_requires_grad || other->requires_grad())
-        {
-            std::shared_ptr<Tensor> self = shared_from_this();
-            std::vector<std::shared_ptr<Tensor>> parents{ self, other };
-            std::function<void(const std::vector<float>&)> gradfn = [self, other](const std::vector<float> &grad_output)
-            {
-                TensorOperations::mult_1D_2D_reverse(self, other, grad_output);
-            };
-            return std::make_shared<Tensor>(result, true, gradfn, parents);
-        }
-        return std::make_shared<Tensor>(result);
-    }
-    else if (_shape.size() == 2 && other->shape().size() == 2) // Matrix-Matrix Product: 2D x 2D -> 2D
-    {
-        std::vector<std::vector<float>> result = TensorOperations::mult_2D_2D(shared_from_this(), other);
-        if (_requires_grad || other->requires_grad())
-        {
-            std::shared_ptr<Tensor> self = shared_from_this();
-            std::vector<std::shared_ptr<Tensor>> parents{ self, other };
-            std::function<void(const std::vector<float>&)> gradfn = [self, other](const std::vector<float> &grad_output)
-            {
-                TensorOperations::mult_2D_2D_reverse(self, other, grad_output);
-            };
-            return std::make_shared<Tensor>(result, true, gradfn, parents);
-        }
-        return std::make_shared<Tensor>(result);
-    }
-    else
-    {
-        throw std::invalid_argument("One or more of the tensors is a scalar");
-    }
+
+    return result;
 }
 
 std::ostream &operator<<(std::ostream &os, const Tensor &obj)

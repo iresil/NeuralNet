@@ -46,6 +46,21 @@ class Tensor : public std::enable_shared_from_this<Tensor>
         >::type _get_item(T &tensor, std::size_t i, std::size_t j);
 
     public:
+        using AddFunc = std::function<std::shared_ptr<Tensor>(std::shared_ptr<Tensor>, std::shared_ptr<Tensor>)>;
+        using MultFunc = std::function<std::shared_ptr<Tensor>(std::shared_ptr<Tensor>, std::shared_ptr<Tensor>)>;
+        using GradFunc = std::function<void(std::shared_ptr<Tensor>, std::shared_ptr<Tensor>, const std::vector<float>&)>;
+
+        struct AddOperation
+        {
+            AddFunc forward;
+            GradFunc backward;
+        };
+        struct MultOperation
+        {
+            MultFunc forward;
+            GradFunc backward;
+        };
+
         Tensor(float data, bool requires_grad = false,
                std::function<void(const std::vector<float>&)> gradfn = nullptr,
                std::vector<std::shared_ptr<Tensor>> parents = {});
@@ -55,6 +70,10 @@ class Tensor : public std::enable_shared_from_this<Tensor>
         Tensor(std::vector<std::vector<float>> data, bool requires_grad = false,
                std::function<void(const std::vector<float>&)> gradfn = nullptr,
                std::vector<std::shared_ptr<Tensor>> parents = {});
+        void make_with_grad(bool requires_grad, std::vector<std::shared_ptr<Tensor>> parents,
+                            std::function<void(const std::vector<float>&)> gradfn);
+        std::shared_ptr<Tensor> create_tensor_with_grad(std::shared_ptr<Tensor> result, std::shared_ptr<Tensor> self,
+                                                        std::shared_ptr<Tensor> other, GradFunc backward);
 
         const std::vector<std::size_t> &shape() const;
         const std::vector<std::size_t> &stride() const;

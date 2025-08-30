@@ -2,9 +2,10 @@
 #include "tensor_operations.h"
 #include "tensor.h"
 
-float TensorOperations::add_scalar_scalar(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other)
+std::shared_ptr<Tensor> TensorOperations::add_scalar_scalar(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other)
 {
-    return self->item() + other->item();
+    float result = self->item() + other->item();
+    return std::make_shared<Tensor>(result);
 }
 
 void TensorOperations::add_scalar_scalar_reverse(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other,
@@ -17,7 +18,7 @@ void TensorOperations::add_scalar_scalar_reverse(const std::shared_ptr<Tensor> &
     other->add_to_grad(grad_output);
 }
 
-std::vector<float> TensorOperations::add_scalar_1D(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other)
+std::shared_ptr<Tensor> TensorOperations::add_scalar_1D(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other)
 {
     std::size_t count_i = other->shape()[0];
     std::vector<float> result(count_i);
@@ -28,7 +29,7 @@ std::vector<float> TensorOperations::add_scalar_1D(const std::shared_ptr<Tensor>
     {
         result[i] = self->item() + (*other)(i);
     });
-    return result;
+    return std::make_shared<Tensor>(result);
 }
 
 void TensorOperations::add_scalar_1D_reverse(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other,
@@ -48,7 +49,7 @@ void TensorOperations::add_scalar_1D_reverse(const std::shared_ptr<Tensor> &self
     other->add_to_grad(grad_output);
 }
 
-std::vector<std::vector<float>> TensorOperations::add_scalar_2D(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other)
+std::shared_ptr<Tensor> TensorOperations::add_scalar_2D(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other)
 {
     std::size_t count_i = other->shape()[0];
     std::size_t count_j = other->shape()[1];
@@ -67,7 +68,7 @@ std::vector<std::vector<float>> TensorOperations::add_scalar_2D(const std::share
         });
         result[i] = result_i;
     });
-    return result;
+    return std::make_shared<Tensor>(result);
 }
 
 void TensorOperations::add_scalar_2D_reverse(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other,
@@ -87,7 +88,7 @@ void TensorOperations::add_scalar_2D_reverse(const std::shared_ptr<Tensor> &self
     other->add_to_grad(grad_output);
 }
 
-std::vector<float> TensorOperations::add_1D_scalar(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other)
+std::shared_ptr<Tensor> TensorOperations::add_1D_scalar(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other)
 {
     std::size_t count_i = self->shape()[0];
     std::vector<float> result(count_i);
@@ -98,7 +99,7 @@ std::vector<float> TensorOperations::add_1D_scalar(const std::shared_ptr<Tensor>
     {
         result[i] = (*self)(i) + other->item();
     });
-    return result;
+    return std::make_shared<Tensor>(result);
 }
 
 void TensorOperations::add_1D_scalar_reverse(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other,
@@ -118,7 +119,7 @@ void TensorOperations::add_1D_scalar_reverse(const std::shared_ptr<Tensor> &self
     other->add_to_grad({ grad_other });
 }
 
-std::vector<std::vector<float>> TensorOperations::add_2D_scalar(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other)
+std::shared_ptr<Tensor> TensorOperations::add_2D_scalar(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other)
 {
     std::size_t count_i = self->shape()[0];
     std::size_t count_j = self->shape()[1];
@@ -137,7 +138,7 @@ std::vector<std::vector<float>> TensorOperations::add_2D_scalar(const std::share
         });
         result[i] = result_i;
     });
-    return result;
+    return std::make_shared<Tensor>(result);
 }
 
 void TensorOperations::add_2D_scalar_reverse(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other,
@@ -157,7 +158,7 @@ void TensorOperations::add_2D_scalar_reverse(const std::shared_ptr<Tensor> &self
     other->add_to_grad({ grad_other });
 }
 
-std::vector<float> TensorOperations::add_1D_1D(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other)
+std::shared_ptr<Tensor> TensorOperations::add_1D_1D(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other)
 {
     std::size_t count_i = self->shape()[0];
     std::vector<float> result(count_i);
@@ -168,7 +169,7 @@ std::vector<float> TensorOperations::add_1D_1D(const std::shared_ptr<Tensor> &se
     {
         result[i] = (*self)(i) + (*other)(i);
     });
-    return result;
+    return std::make_shared<Tensor>(result);
 }
 
 void TensorOperations::add_1D_1D_reverse(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other,
@@ -180,7 +181,7 @@ void TensorOperations::add_1D_1D_reverse(const std::shared_ptr<Tensor> &self, co
     other->add_to_grad(grad_output);
 }
 
-std::vector<std::vector<float>> TensorOperations::add_2D_2D(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other)
+std::shared_ptr<Tensor> TensorOperations::add_2D_2D(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other)
 {
     std::size_t count_i = self->shape()[0];
     std::size_t count_j = self->shape()[1];
@@ -199,7 +200,7 @@ std::vector<std::vector<float>> TensorOperations::add_2D_2D(const std::shared_pt
         });
         result[i] = result_i;
     });
-    return result;
+    return std::make_shared<Tensor>(result);
 }
 
 void TensorOperations::add_2D_2D_reverse(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other,
@@ -211,7 +212,7 @@ void TensorOperations::add_2D_2D_reverse(const std::shared_ptr<Tensor> &self, co
     other->add_to_grad(grad_output);
 }
 
-float TensorOperations::mult_1D_1D(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other)
+std::shared_ptr<Tensor> TensorOperations::mult_1D_1D(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other)
 {
     float result = 0.0f;
     std::size_t count_i = self->shape()[0];
@@ -219,7 +220,7 @@ float TensorOperations::mult_1D_1D(const std::shared_ptr<Tensor> &self, const st
     {
         result += (*self)(i) * (*other)(i);
     }
-    return result;
+    return std::make_shared<Tensor>(result);
 }
 
 void TensorOperations::mult_1D_1D_reverse(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other, const std::vector<float> &grad_output)
@@ -240,7 +241,7 @@ void TensorOperations::mult_1D_1D_reverse(const std::shared_ptr<Tensor> &self, c
     other->add_to_grad(grad_other);
 }
 
-std::vector<float> TensorOperations::mult_2D_1D(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other)
+std::shared_ptr<Tensor> TensorOperations::mult_2D_1D(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other)
 {
     std::size_t count_i = self->shape()[0];
     std::size_t count_j = self->shape()[1];
@@ -257,7 +258,7 @@ std::vector<float> TensorOperations::mult_2D_1D(const std::shared_ptr<Tensor> &s
         }
         result[i] = result_i;
     });
-    return result;
+    return std::make_shared<Tensor>(result);
 }
 
 void TensorOperations::mult_2D_1D_reverse(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other, const std::vector<float> &grad_output)
@@ -298,7 +299,7 @@ void TensorOperations::mult_2D_1D_reverse(const std::shared_ptr<Tensor> &self, c
     other->add_to_grad(grad_other);
 }
 
-std::vector<float> TensorOperations::mult_1D_2D(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other)
+std::shared_ptr<Tensor> TensorOperations::mult_1D_2D(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other)
 {
     std::size_t count_i = other->shape()[1];
     std::size_t count_j = other->shape()[0];
@@ -315,7 +316,7 @@ std::vector<float> TensorOperations::mult_1D_2D(const std::shared_ptr<Tensor> &s
         }
         result[i] = result_i;
     });
-    return result;
+    return std::make_shared<Tensor>(result);
 }
 
 void TensorOperations::mult_1D_2D_reverse(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other, const std::vector<float> &grad_output)
@@ -356,7 +357,7 @@ void TensorOperations::mult_1D_2D_reverse(const std::shared_ptr<Tensor> &self, c
     other->add_to_grad(grad_other);
 }
 
-std::vector<std::vector<float>> TensorOperations::mult_2D_2D(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other)
+std::shared_ptr<Tensor> TensorOperations::mult_2D_2D(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other)
 {
     std::size_t count_i = self->shape()[0];
     std::size_t count_j = other->shape()[1];
@@ -381,7 +382,7 @@ std::vector<std::vector<float>> TensorOperations::mult_2D_2D(const std::shared_p
         });
         result[i] = result_i;
     });
-    return result;
+    return std::make_shared<Tensor>(result);
 }
 
 void TensorOperations::mult_2D_2D_reverse(const std::shared_ptr<Tensor> &self, const std::shared_ptr<Tensor> &other, const std::vector<float> &grad_output)
