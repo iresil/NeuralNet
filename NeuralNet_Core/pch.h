@@ -15,6 +15,8 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <numeric>
+#include <execution>
 #include <stdexcept>
 
 #endif //PCH_H
