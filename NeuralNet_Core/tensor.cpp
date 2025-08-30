@@ -144,103 +144,104 @@ void Tensor::backward()
     _backward();
 }
 
-const float &Tensor::item() const
+template <typename T>
+typename std::conditional<
+    std::is_const<T>::value,
+    const float &,
+    float &
+>::type Tensor::_get_item(T &tensor)
 {
     // Works only with scalars and 1d tensors
-    if (_dimension_x == 1)
+    if (tensor._dimension_x == 1)
     {
-        return _data[0];
+        return tensor._data[0];
     }
     else
     {
-        throw::std::runtime_error("item() can only be called on tensors with a single element");
+        throw std::runtime_error("item() can only be called on tensors with a single element");
     }
+}
+template float &Tensor::_get_item<Tensor>(Tensor &tensor);
+template const float &Tensor::_get_item<const Tensor>(const Tensor &tensor);
+
+template <typename T>
+typename std::conditional<
+    std::is_const<T>::value,
+    const float &,
+    float &
+>::type Tensor::_get_item(T &tensor, std::size_t i)
+{
+    if (tensor._shape.size() == 0)
+    {
+        throw std::invalid_argument("Can't index into a scalar. Use item() instead");
+    }
+    if (tensor._shape.size() == 1)
+    {
+        if (i >= tensor._shape[0])
+        {
+            throw std::invalid_argument("Index " + std::to_string(i) + " is out of bounds for array of size " + std::to_string(tensor._shape[0]));
+        }
+        return tensor._data[i];
+    }
+    throw std::invalid_argument("This is a 1D tensor. Use two indices for 2D tensors.");
+}
+template float &Tensor::_get_item<Tensor>(Tensor &tensor, std::size_t i);
+template const float &Tensor::_get_item<const Tensor>(const Tensor &tensor, std::size_t i);
+
+template <typename T>
+typename std::conditional<
+    std::is_const<T>::value,
+    const float &,
+    float &
+>::type Tensor::_get_item(T &tensor, std::size_t i, std::size_t j)
+{
+    if (tensor._shape.size() == 2)
+    {
+        if (i >= tensor._shape[0])
+        {
+            throw std::invalid_argument("Row index " + std::to_string(i) + " is out of bounds for tensor with "
+                + std::to_string(tensor._shape[0]) + " rows");
+        }
+        if (j >= tensor._shape[1])
+        {
+            throw std::invalid_argument("Column index " + std::to_string(j) + " is out of bounds for tensor with "
+                + std::to_string(tensor._shape[1]) + " columns");
+        }
+        return tensor._data[i * tensor._stride[0] + j * tensor._stride[1]];
+    }
+    throw std::invalid_argument("Can only double index into 2D tensors");
+}
+template float &Tensor::_get_item<Tensor>(Tensor &tensor, std::size_t i, std::size_t j);
+template const float &Tensor::_get_item<const Tensor>(const Tensor &tensor, std::size_t i, std::size_t j);
+
+const float &Tensor::item() const
+{
+    return _get_item<const Tensor>(*this);
 }
 
 float &Tensor::item()
 {
-    // Works only with scalars and 1d tensors
-    if (_dimension_x == 1)
-    {
-        return _data[0];
-    }
-    else
-    {
-        throw::std::runtime_error("item() can only be called on tensors with a single element");
-    }
+    return _get_item<Tensor>(*this);
 }
 
 const float &Tensor::operator()(std::size_t i) const
 {
-    if (_shape.size() == 0)
-    {
-        throw std::invalid_argument("Can't index into a scalar. Use item() instead");
-    }
-    if (_shape.size() == 1)
-    {
-        if (i >= _shape[0])
-        {
-            throw std::invalid_argument("Index " + std::to_string(i) + " is out of bounds for array of size " + std::to_string(_shape[0]));
-        }
-        return _data[i];
-    }
-    throw std::invalid_argument("This is a 1D tensor. Use two indices for 2D tensors.");
+    return _get_item<const Tensor>(*this, i);
 }
 
 float &Tensor::operator()(std::size_t i)
 {
-    if (_shape.size() == 0)
-    {
-        throw std::invalid_argument("Can't index into a scalar. Use item() instead");
-    }
-    if (_shape.size() == 1)
-    {
-        if (i >= _shape[0])
-        {
-            throw std::invalid_argument("Index " + std::to_string(i) + " is out of bounds for array of size "
-                + std::to_string(_shape[0]));
-        }
-        return _data[i];
-    }
-    throw std::invalid_argument("This is a 1D tensor. Use two indices for 2D tensors.");
+    return _get_item<Tensor>(*this, i);
 }
 
 const float &Tensor::operator()(std::size_t i, std::size_t j) const
 {
-    if (_shape.size() == 2)
-    {
-        if (i >= _shape[0])
-        {
-            throw std::invalid_argument("Row index " + std::to_string(i) + " is out of bounds for tensor with "
-                + std::to_string(_shape[0]) + " rows");
-        }
-        if (j >= _shape[1])
-        {
-            throw std::invalid_argument("Column index " + std::to_string(j) + " is out of bounds for tensor with "
-                + std::to_string(_shape[1]) + " columns");
-        }
-        return _data[i * _stride[0] + j * _stride[1]];
-    }
-    throw std::invalid_argument("Can only double index into 2D tensors");
+    return _get_item<const Tensor>(*this, i, j);
 }
 
 float &Tensor::operator()(std::size_t i, std::size_t j)
 {
-    if (_shape.size() == 2)
-    {
-        if (i >= _shape[0])
-        {
-            throw std::invalid_argument("Row index " + std::to_string(i) + " is out of bounds for tensor with "
-                + std::to_string(_shape[0]) + " rows");
-        }
-        if (j >= _shape[1])
-        {
-            throw std::invalid_argument("Column index " + std::to_string(j) + " is out of bounds for tensor with "
-                + std::to_string(_shape[1]) + " columns");
-        }
-        return _data[i * _stride[0] + j * _stride[1]];
-    }
-    throw std::invalid_argument("Can only double index into 2D tensors");
+    return _get_item<Tensor>(*this, i, j);
 }
 
 std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)

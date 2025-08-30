@@ -3,6 +3,7 @@
 #include <iostream>
 #include <memory>
 #include <cstddef>
+#include <type_traits>
 #include <vector>
 
 class Tensor : public std::enable_shared_from_this<Tensor>
@@ -22,6 +23,27 @@ class Tensor : public std::enable_shared_from_this<Tensor>
         void _backward();
         bool _visited = false;
         void _reset_graph_visit();
+
+        template <typename T>
+        static typename std::conditional<
+            std::is_const<T>::value,
+            const float &,
+            float &
+        >::type _get_item(T &tensor);
+
+        template <typename T>
+        static typename std::conditional<
+            std::is_const<T>::value,
+            const float &,
+            float &
+        >::type _get_item(T &tensor, std::size_t i);
+
+        template <typename T>
+        static typename std::conditional<
+            std::is_const<T>::value,
+            const float &,
+            float &
+        >::type _get_item(T &tensor, std::size_t i, std::size_t j);
 
     public:
         Tensor(float data, bool requires_grad = false,
