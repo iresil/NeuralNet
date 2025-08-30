@@ -274,7 +274,7 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
         std::iota(indices.begin(), indices.end(), 0);
         std::for_each(std::execution::par, indices.begin(), indices.end(), [&](std::size_t i)
         {
-            result[i] = item() + other->operator()(i);
+            result[i] = item() + (*other)(i);
         });
         if (_requires_grad || other->requires_grad())
         {
@@ -314,7 +314,7 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
         {
             std::for_each(std::execution::par, indices_j.begin(), indices_j.end(), [&](std::size_t j)
             {
-                result_i[j] = item() + other->operator()(i, j);
+                result_i[j] = item() + (*other)(i, j);
             });
             result[i] = result_i;
         });
@@ -350,7 +350,7 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
         std::iota(indices.begin(), indices.end(), 0);
         std::for_each(std::execution::par, indices.begin(), indices.end(), [&](std::size_t i)
         {
-            result[i] = operator()(i) + other->item();
+            result[i] = (*this)(i) + other->item();
         });
         if (_requires_grad || other->requires_grad())
         {
@@ -390,7 +390,7 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
         {
             std::for_each(std::execution::par, indices_j.begin(), indices_j.end(), [&](std::size_t j)
             {
-                result_i[j] = operator()(i, j) + other->item();
+                result_i[j] = (*this)(i, j) + other->item();
             });
             result[i] = result_i;
         });
@@ -426,7 +426,7 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
         std::iota(indices.begin(), indices.end(), 0);
         std::for_each(std::execution::par, indices.begin(), indices.end(), [&](std::size_t i)
         {
-            result[i] = operator()(i) + other->operator()(i);
+            result[i] = (*this)(i) + (*other)(i);
         });
         if (_requires_grad || other->requires_grad())
         {
@@ -463,7 +463,7 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other)
         {
             std::for_each(std::execution::par, indices_j.begin(), indices_j.end(), [&](std::size_t j)
             {
-                result_i[j] = operator()(i, j) + other->operator()(i, j);
+                result_i[j] = (*this)(i, j) + (*other)(i, j);
             });
             result[i] = result_i;
         });
@@ -508,7 +508,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
         std::size_t count_i = _shape[0];
         for (std::size_t i = 0; i < count_i; i++)
         {
-            result += operator()(i) * other->operator()(i);
+            result += (*this)(i) * (*other)(i);
         }
         if (_requires_grad || other->requires_grad())
         {
@@ -524,8 +524,8 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
                 std::iota(indices.begin(), indices.end(), 0);
                 std::for_each(std::execution::par, indices.begin(), indices.end(), [&](std::size_t i)
                 {
-                    grad_self[i] = other->operator()(i) * grad_output[0];
-                    grad_other[i] = self->operator()(i) * grad_output[0];
+                    grad_self[i] = (*other)(i) * grad_output[0];
+                    grad_other[i] = (*self)(i) * grad_output[0];
                 });
 
                 self->add_to_grad(grad_self);
@@ -548,7 +548,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
             float result_i = 0.0f;
             for (std::size_t j = 0; j < count_j; j++)
             {
-                result_i += operator()(i, j) * other->operator()(j);
+                result_i += (*this)(i, j) * (*other)(j);
             }
             result[i] = result_i;
         });
@@ -570,7 +570,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
                 {
                     std::for_each(std::execution::par, indices_j.begin(), indices_j.end(), [&](std::size_t j)
                     {
-                        grad_self[i * count_j + j] = other->operator()(j) * grad_output[i];
+                        grad_self[i * count_j + j] = (*other)(j) * grad_output[i];
                     });
                 });
 
@@ -585,7 +585,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
                     float grad_other_i = 0.0f;
                     for (std::size_t j = 0; j < count_j; j++)
                     {
-                        grad_other_i += self->operator()(j, i) * grad_output[j];
+                        grad_other_i += (*self)(j, i) * grad_output[j];
                     }
                     grad_other[i] = grad_other_i;
                 });
@@ -610,7 +610,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
             float result_i = 0.0f;
             for (std::size_t j = 0; j < count_j; j++)
             {
-                result_i += operator()(j) * other->operator()(j, i);
+                result_i += (*this)(j) * (*other)(j, i);
             }
             result[i] = result_i;
         });
@@ -631,7 +631,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
                     float grad_self_i = 0.0f;
                     for (std::size_t j = 0; j < count_j; j++)
                     {
-                        grad_self_i += other->operator()(i, j) * grad_output[j];
+                        grad_self_i += (*other)(i, j) * grad_output[j];
                     }
                     grad_self[i] = grad_self_i;
                 });
@@ -648,7 +648,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
                 {
                     std::for_each(std::execution::par, indices_j_other.begin(), indices_j_other.end(), [&](std::size_t j)
                     {
-                        grad_other[i * count_j_other + j] = self->operator()(i) * grad_output[j];
+                        grad_other[i * count_j_other + j] = (*self)(i) * grad_output[j];
                     });
                 });
 
@@ -678,7 +678,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
                 float result_i_j = 0.0f;
                 for (std::size_t k = 0; k < count_k; k++)
                 {
-                    result_i_j += operator()(i, k) * other->operator()(k, j);
+                    result_i_j += (*this)(i, k) * (*other)(k, j);
                 }
                 result_i[j] = result_i_j;
             });
@@ -707,7 +707,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
                         float grad_self_i_j = 0.0f;
                         for (std::size_t k = 0; k < count_k; k++)
                         {
-                            grad_self_i_j += other->operator()(j, k) * grad_output[i * count_k + k];
+                            grad_self_i_j += (*other)(j, k) * grad_output[i * count_k + k];
                         }
                         grad_self[i * count_j + j] = grad_self_i_j;
                     });
@@ -729,7 +729,7 @@ std::shared_ptr<Tensor> Tensor::operator*(std::shared_ptr<Tensor> other)
                         float grad_other_i_j = 0.0f;
                         for (std::size_t k = 0; k < count_k_other; k++)
                         {
-                            grad_other_i_j += self->operator()(k, i) * grad_output[k * count_j_other + j];
+                            grad_other_i_j += (*self)(k, i) * grad_output[k * count_j_other + j];
                         }
                         grad_other[i * count_j_other + j] = grad_other_i_j;
                     });
